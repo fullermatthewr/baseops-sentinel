@@ -1,0 +1,1388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Base Operations — Account Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#080808; --bg2:#0f0f0f; --bg3:#161616; --bg4:#1e1e1e;
+  --border:rgba(255,255,255,0.07); --border-hi:rgba(255,255,255,0.14);
+  --text:#FAFAFA; --text2:#a0a0b0; --text3:#4a4a5a;
+  --ae:#FDD835; --ae-dim:rgba(253,216,53,0.08); --ae-bdr:rgba(253,216,53,0.22);
+  --cs:#47AED0; --cs-dim:rgba(71,174,208,0.08); --cs-bdr:rgba(71,174,208,0.20);
+  --amber:#FDD835; --red:#ef4444; --blue:#47AED0;
+  --q1:#78C6F5; --q2:#6A93E7; --q3:#676DD8; --q4:#9151B9; --q5:#BD268E;
+  --font-d:'Roboto',sans-serif; --font-m:'Roboto Mono',monospace; --font-b:'Roboto',sans-serif;
+  --r:5px; --rl:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--font-b);font-size:13px;min-height:100vh;overflow-x:hidden;font-weight:400;}
+.shell{display:flex;height:100vh;overflow:hidden;}
+
+/* SIDEBAR */
+.sidebar{width:220px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;}
+.ws-tabs{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--border);}
+.ws-tab{padding:13px 0 11px;text-align:center;cursor:pointer;transition:all .15s;border-bottom:2px solid transparent;}
+.ws-tab .wn{font-family:var(--font-d);font-size:13px;font-weight:700;display:block;}
+.ws-tab .wl{font-family:var(--font-m);font-size:8px;letter-spacing:.14em;display:block;margin-top:2px;opacity:.7;}
+.ws-tab.on-ae{border-bottom-color:var(--ae);background:rgba(253,216,53,0.06);}
+.ws-tab.on-ae .wn,.ws-tab.on-ae .wl{color:var(--ae);}
+.ws-tab.on-cs{border-bottom-color:var(--cs);background:var(--cs-dim);}
+.ws-tab.on-cs .wn,.ws-tab.on-cs .wl{color:var(--cs);}
+.ws-tab:not(.on-ae):not(.on-cs){color:var(--text3);}
+.ws-tab:not(.on-ae):not(.on-cs):hover{color:var(--text2);background:var(--bg3);}
+
+.nav-sec{padding:9px 10px 3px;}
+.nav-lbl{font-family:var(--font-m);font-size:8px;font-weight:700;letter-spacing:.22em;color:var(--text3);padding:0 7px;margin-bottom:3px;text-transform:uppercase;}
+.nav-item{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:var(--r);cursor:pointer;color:var(--text2);font-size:12.5px;transition:all .12s;border:1px solid transparent;}
+.nav-item:hover{background:var(--bg3);color:var(--text);}
+.nav-item.on-ae{background:var(--ae-dim);color:var(--ae);border-color:var(--ae-bdr);}
+.nav-item.on-cs{background:var(--cs-dim);color:var(--cs);border-color:var(--cs-bdr);}
+.nav-ico{width:14px;height:14px;flex-shrink:0;}
+.nav-badge{margin-left:auto;border-radius:9px;padding:1px 5px;font-size:9px;font-family:var(--font-m);color:#fff;}
+.sfooter{margin-top:auto;padding:11px 14px;border-top:1px solid var(--border);}
+.sfoot-row{display:flex;align-items:center;gap:6px;font-family:var(--font-m);font-size:9px;color:var(--text3);margin-bottom:2px;}
+.pulse{width:5px;height:5px;border-radius:50%;animation:pulse 2.4s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
+
+/* MAIN */
+.main{flex:1;overflow-y:auto;display:flex;flex-direction:column;}
+.topbar{padding:12px 26px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;background:var(--bg);position:sticky;top:0;z-index:20;}
+.topbar-title{font-family:var(--font-d);font-size:14px;font-weight:900;flex:1;letter-spacing:0.04em;}
+.ws-pill{padding:3px 10px;border-radius:20px;font-family:var(--font-m);font-size:9px;letter-spacing:.12em;font-weight:500;}
+.ws-pill-ae{background:rgba(253,216,53,0.12);color:var(--ae);border:1px solid rgba(253,216,53,0.35);font-weight:700;}
+.ws-pill-cs{background:var(--cs-dim);color:var(--cs);border:1px solid var(--cs-bdr);}
+.topbar-meta{font-family:var(--font-m);font-size:10px;color:var(--text2);}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border-radius:var(--r);border:1px solid var(--border-hi);background:var(--bg3);color:var(--text);font-family:var(--font-m);font-size:11px;cursor:pointer;transition:all .12s;}
+.btn:hover{background:var(--bg4);}
+.btn-ae{background:var(--ae);color:#080808;border-color:var(--ae);font-weight:700;letter-spacing:0.03em;}
+.btn-ae:hover{background:#ffe566;border-color:#ffe566;}
+.btn-cs{background:var(--cs);color:#080808;border-color:var(--cs);font-weight:700;}
+.btn-cs:hover{background:#6ec7e0;border-color:#6ec7e0;}
+.content{padding:22px 26px;flex:1;}
+.view{display:none;} .view.active{display:block;}
+
+/* STATS */
+.stat-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px;}
+.stat{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:14px 15px;position:relative;overflow:hidden;}
+.stat::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--sc,var(--ae));opacity:.7;}
+.stat-lbl{font-family:var(--font-m);font-size:8px;font-weight:700;letter-spacing:.18em;color:var(--text2);margin-bottom:7px;text-transform:uppercase;}
+.stat-val{font-family:var(--font-d);font-size:24px;font-weight:900;line-height:1;margin-bottom:4px;}
+.stat-sub{font-family:var(--font-m);font-size:10px;color:var(--text2);}
+.stat-sub.up{color:#00c9a7;} .stat-sub.dn{color:var(--red);}
+
+/* FILTER BAR */
+.filter-bar{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.chip{padding:4px 11px;border-radius:20px;border:1px solid var(--border);background:var(--bg2);color:var(--text2);font-family:var(--font-m);font-size:10px;cursor:pointer;transition:all .12s;}
+.chip:hover{border-color:var(--border-hi);color:var(--text);}
+.chip.on-ae{border-color:var(--ae);color:#080808;background:var(--ae);font-weight:700;}
+.chip.on-cs{border-color:var(--cs);color:#080808;background:var(--cs);font-weight:700;}
+.srch{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:6px 11px;color:var(--text);font-family:var(--font-m);font-size:11px;outline:none;width:220px;}
+.srch:focus{border-color:var(--border-hi);}
+.srch::placeholder{color:var(--text3);}
+.row-count{margin-left:auto;font-family:var(--font-m);font-size:10px;color:var(--text3);}
+
+/* TABLE */
+.tbl-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;}
+.tbl-head{display:grid;gap:0;padding:9px 14px;border-bottom:1px solid var(--border);}
+.th{font-family:var(--font-m);font-size:9px;font-weight:500;letter-spacing:.16em;color:var(--text3);display:flex;align-items:center;text-transform:uppercase;}
+.acct-row{display:grid;gap:0;padding:10px 14px;border-bottom:1px solid var(--border);align-items:center;cursor:pointer;transition:background .1s;}
+.acct-row:hover{background:rgba(255,255,255,.018);}
+.acct-row:last-child{border-bottom:none;}
+.ae-grid{grid-template-columns:24px 1.5fr 1fr 1fr 1fr 1fr 1fr 96px 72px 32px;}
+.cs-grid{grid-template-columns:24px 1.5fr 1fr 1fr 1fr 1fr 90px 90px 32px;}
+.roster-grid{grid-template-columns:32px 1.8fr 1fr 1fr 1fr 110px 36px;}
+.row-rank{font-family:var(--font-m);font-size:10px;color:var(--text3);}
+.co-name{font-weight:500;font-size:13px;margin-bottom:1px;}
+.co-meta{font-family:var(--font-m);font-size:10px;color:var(--text2);}
+.sc-cell{display:flex;align-items:center;gap:6px;}
+.sc-bar-w{flex:1;height:3px;background:var(--bg4);border-radius:2px;overflow:hidden;}
+.sc-bar{height:100%;border-radius:2px;}
+.sc-n{font-family:var(--font-m);font-size:11px;min-width:20px;text-align:right;}
+.ring{display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;border:2px solid;font-family:var(--font-d);font-size:12px;font-weight:700;}
+.tbadge{padding:2px 7px;border-radius:4px;font-family:var(--font-m);font-size:9px;letter-spacing:.07em;}
+.row-sigs{display:flex;flex-direction:column;gap:3px;}
+.row-sig-line{display:flex;align-items:center;gap:4px;font-family:var(--font-m);font-size:9px;}
+.sig-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+.act-btn{width:26px;height:26px;border-radius:var(--r);border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .12s;font-size:12px;}
+.act-btn:hover{background:var(--bg3);color:var(--text);}
+.seg-pill{padding:2px 8px;border-radius:10px;font-family:var(--font-m);font-size:9px;white-space:nowrap;}
+
+/* DETAIL PANEL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100;display:none;align-items:flex-start;justify-content:flex-end;}
+.overlay.open{display:flex;}
+.detail{width:560px;height:100vh;background:var(--bg2);border-left:1px solid var(--border);overflow-y:auto;animation:si .18s ease;}
+@keyframes si{from{transform:translateX(100%)}to{transform:translateX(0)}}
+.det-hdr{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;position:sticky;top:0;background:var(--bg2);z-index:1;}
+.det-co{font-family:var(--font-d);font-size:18px;font-weight:900;margin-bottom:3px;letter-spacing:0.02em;}
+.det-meta{font-family:var(--font-m);font-size:10px;color:var(--text2);}
+.det-body{padding:18px 22px;}
+.det-sec{margin-bottom:22px;}
+.det-sec-title{font-family:var(--font-m);font-size:8px;font-weight:700;letter-spacing:.22em;color:var(--ae);margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid var(--border);text-transform:uppercase;}
+.brief{background:var(--bg3);border:1px solid var(--border);border-left:3px solid var(--ae);border-radius:var(--r);padding:13px 15px;font-size:13px;line-height:1.65;}
+.score-rows{display:flex;flex-direction:column;gap:9px;}
+.score-row{display:flex;align-items:center;gap:11px;}
+.sc-label{font-size:12px;color:var(--text2);width:175px;flex-shrink:0;}
+.sc-track{flex:1;height:5px;background:var(--bg4);border-radius:3px;overflow:hidden;}
+.sc-fill{height:100%;border-radius:3px;}
+.sc-num-d{font-family:var(--font-m);font-size:12px;width:26px;text-align:right;}
+.sig-list{display:flex;flex-direction:column;gap:7px;}
+.sig-item{display:flex;align-items:flex-start;gap:9px;padding:9px 11px;background:var(--bg3);border-radius:var(--r);border:1px solid var(--border);}
+.sig-ico{width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;background:var(--bg4);}
+.sig-t{font-size:12px;font-weight:500;margin-bottom:1px;}
+.sig-d{font-family:var(--font-m);font-size:10px;color:var(--text2);}
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.pcard{padding:10px 11px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);}
+.p-name{font-size:12px;font-weight:500;margin-bottom:1px;}
+.p-title{font-family:var(--font-m);font-size:10px;color:var(--text2);margin-bottom:6px;}
+.p-tags{display:flex;flex-wrap:wrap;gap:3px;}
+.p-tag{padding:1px 6px;border-radius:3px;font-family:var(--font-m);font-size:9px;background:var(--bg4);color:var(--text2);}
+.obox{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;}
+.olbl{font-family:var(--font-m);font-size:9px;letter-spacing:.12em;color:var(--text2);margin-bottom:6px;}
+.otxt{font-size:12.5px;line-height:1.6;}
+.close-btn{background:none;border:1px solid var(--border);border-radius:var(--r);color:var(--text2);padding:5px 9px;cursor:pointer;font-size:13px;transition:all .12s;}
+.close-btn:hover{background:var(--bg3);color:var(--text);}
+.hgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.hcard{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:11px 13px;}
+.hlbl{font-family:var(--font-m);font-size:9px;color:var(--text2);margin-bottom:4px;letter-spacing:.1em;}
+.hval{font-family:var(--font-d);font-size:20px;font-weight:700;}
+
+/* RESEARCH */
+.rpanel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:18px 20px;margin-bottom:20px;}
+.rp-title{font-family:var(--font-d);font-size:15px;font-weight:700;margin-bottom:3px;}
+.rp-sub{font-size:12px;color:var(--text2);margin-bottom:14px;}
+.r-row{display:flex;gap:7px;margin-bottom:12px;}
+.r-input{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:9px 13px;color:var(--text);font-family:var(--font-b);font-size:13px;outline:none;}
+.r-input:focus{border-color:var(--border-hi);}
+.r-input::placeholder{color:var(--text3);}
+.ag-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;}
+.ag{padding:10px 11px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);transition:all .2s;}
+.ag.run{border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.04);}
+.ag.done{border-color:rgba(0,201,167,.3);background:rgba(0,201,167,.04);}
+.ag.err{border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.04);}
+.ag-name{font-family:var(--font-m);font-size:10px;font-weight:500;margin-bottom:3px;}
+.ag-st{font-family:var(--font-m);font-size:9px;color:var(--text2);display:flex;align-items:center;gap:4px;}
+.ag-st.run{color:var(--amber);}
+.ag-st.done{color:#00c9a7;}
+.spin{width:7px;height:7px;border:1.5px solid rgba(245,158,11,.3);border-top-color:var(--amber);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.rbox{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:15px;line-height:1.7;display:none;}
+.rbox.show{display:block;}
+
+/* PANELS */
+.two-col{display:grid;grid-template-columns:1fr 290px;gap:18px;}
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:16px 18px;}
+.panel-title{font-family:var(--font-m);font-size:9px;font-weight:700;letter-spacing:.2em;color:var(--ae);margin-bottom:12px;text-transform:uppercase;}
+.al-item{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);align-items:flex-start;}
+.al-item:last-child{border-bottom:none;}
+.a-dot{width:7px;height:7px;border-radius:50%;margin-top:4px;flex-shrink:0;}
+.a-text{font-size:13px;margin-bottom:2px;}
+.a-meta{font-family:var(--font-m);font-size:10px;color:var(--text2);}
+.mi{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px;}
+
+/* ADMIN */
+.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+.cfg-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:18px 20px;}
+.cfg-title{font-family:var(--font-d);font-size:14px;font-weight:600;margin-bottom:3px;}
+.cfg-sub{font-size:12px;color:var(--text2);margin-bottom:14px;}
+.w-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.w-lbl{font-size:12px;flex:1;}
+.w-inp{width:46px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:4px 7px;color:var(--text);font-family:var(--font-m);font-size:11px;text-align:right;outline:none;}
+.ta{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:9px 11px;color:var(--text);font-family:var(--font-m);font-size:11px;line-height:1.6;outline:none;resize:vertical;min-height:80px;}
+.ta:focus{border-color:var(--border-hi);}
+.icp-tier{padding:8px 10px;background:var(--bg3);border-radius:var(--r);border:1px solid var(--border);margin-bottom:6px;}
+.tier-name{font-family:var(--font-m);font-size:10px;font-weight:500;margin-bottom:3px;}
+.tier-inds{font-size:11px;color:var(--text2);line-height:1.5;}
+.uzone{border:2px dashed var(--border-hi);border-radius:var(--r);padding:28px 20px;text-align:center;cursor:pointer;transition:all .15s;margin-bottom:14px;}
+.uzone:hover{border-color:var(--ae);}
+
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px;}
+</style>
+</head>
+<body>
+<div class="shell">
+<nav class="sidebar">
+  <div style="padding:16px 16px 0;border-bottom:1px solid var(--border)">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="14,2 25,8 25,20 14,26 3,20 3,8" fill="#FDD835"/>
+        <polygon points="14,7 20,10.5 20,17.5 14,21 8,17.5 8,10.5" fill="#080808"/>
+        <polygon points="14,11 17,12.75 17,16.25 14,18 11,16.25 11,12.75" fill="#FDD835"/>
+      </svg>
+      <div>
+        <div style="font-family:'Roboto',sans-serif;font-weight:900;font-size:11px;letter-spacing:0.18em;color:var(--text)">BASE OPERATIONS</div>
+        <div style="font-family:'Roboto Mono',monospace;font-size:8px;color:var(--text3);letter-spacing:0.2em;margin-top:1px">ACCOUNT INTELLIGENCE</div>
+      </div>
+    </div>
+  </div>
+  <div class="ws-tabs">
+    <div class="ws-tab on-ae" id="tab-ae" onclick="switchWS('ae')">
+      <span class="wn">AE</span><span class="wl">NEW BUSINESS</span>
+    </div>
+    <div class="ws-tab" id="tab-cs" onclick="switchWS('cs')">
+      <span class="wn">CS</span><span class="wl">EXPANSION</span>
+    </div>
+  </div>
+  <div id="nav-ae">
+    <div class="nav-sec">
+      <div class="nav-lbl">PIPELINE</div>
+      <div class="nav-item on-ae" onclick="go('ae-dash')">
+        <svg class="nav-ico" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/></svg>
+        Target Accounts
+      </div>
+      <div class="nav-item" onclick="go('ae-research')">
+        <svg class="nav-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5"/><path d="m11 11 3 3"/></svg>
+        Live Research
+      </div>
+      <div class="nav-item" onclick="go('ae-roster')">
+        <svg class="nav-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="3" rx="1"/><rect x="2" y="7" width="12" height="3" rx="1"/><rect x="2" y="12" width="7" height="2" rx="1"/></svg>
+        Account Roster
+        <span class="nav-badge" style="background:var(--ae);color:#060d0c">169</span>
+      </div>
+      <div class="nav-item" onclick="go('ae-signals')">
+        <svg class="nav-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2a5 5 0 0 1 5 5v2l1 2H2l1-2V7a5 5 0 0 1 5-5Z"/><path d="M6.5 13a1.5 1.5 0 0 0 3 0"/></svg>
+        Signals Feed
+        <span class="nav-badge" style="background:var(--red)">6</span>
+      </div>
+    </div>
+    <div class="nav-sec">
+      <div class="nav-lbl">CONFIGURE</div>
+      <div class="nav-item" onclick="go('ae-config')">
+        <svg class="nav-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="2"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2"/></svg>
+        ICP &amp; Scoring
+      </div>
+      <div class="nav-item" onclick="go('ae-connections')">
+        <svg class="nav-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="4" cy="8" r="2.5"/><circle cx="12" cy="4" r="2.5"/><circle cx="12" cy="12" r="2.5"/><path d="M6.5 7L9.5 5M6.5 9L9.5 11"/></svg>
+        LinkedIn Connections
+        <span class="nav-badge" id="conn-badge" style="background:var(--bg4);color:var(--text3)">0</span>
+      </div>
+    </div>
+  </div>
+  <div id="nav-cs" style="display:none">
+    <div class="nav-sec">
+      <div class="nav-lbl">CUSTOMERS</div>
+      <div class="nav-item on-cs" onclick="go('cs-dash')">
+        <svg class="nav-ico" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/></svg>
+        Health Dashboard
+      </div>
+      <div class="nav-item" onclick="go('cs-signals')">
+        <svg class="nav-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2a5 5 0 0 1 5 5v2l1 2H2l1-2V7a5 5 0 0 1 5-5Z"/><path d="M6.5 13a1.5 1.5 0 0 0 3 0"/></svg>
+        Expansion Signals
+        <span class="nav-badge" style="background:var(--cs)">5</span>
+      </div>
+    </div>
+  </div>
+  <div class="sfooter">
+    <div class="sfoot-row"><div class="pulse" id="pdot" style="background:var(--ae)"></div><span id="fws">AE &middot; New Business</span></div>
+    <div style="font-family:var(--font-m);font-size:9px;color:var(--text3)" id="fct">12 target accounts</div>
+  </div>
+</nav>
+<div class="main">
+
+<!-- AE: TARGET ACCOUNTS -->
+<div id="view-ae-dash" class="view active">
+  <div class="topbar">
+    <div class="topbar-title">Target Accounts</div>
+    <span class="ws-pill ws-pill-ae">AE — NEW BUSINESS</span>
+    <span class="topbar-meta">Customers excluded &middot; Pipeline prioritized</span>
+    <button class="btn" onclick="exportCSV('ae')">&#8595; Export</button>
+    <button class="btn btn-ae" onclick="go('ae-research')">+ Research Account</button>
+  </div>
+  <div class="content">
+    <div class="stat-row">
+      <div class="stat" style="--sc:#00c9a7"><div class="stat-lbl">ACTIVE PIPELINE</div><div class="stat-val" style="color:#00c9a7">3</div><div class="stat-sub up">Merck, Kaiser, Levis</div></div>
+      <div class="stat" style="--sc:#f59e0b"><div class="stat-lbl">HIGH URGENCY</div><div class="stat-val" style="color:#f59e0b" id="s-urg">0</div><div class="stat-sub">Score &ge; 8.5</div></div>
+      <div class="stat" style="--sc:#8b5cf6"><div class="stat-lbl">NEW EXEC HIRES</div><div class="stat-val" style="color:#8b5cf6">4</div><div class="stat-sub">In target personas</div></div>
+      <div class="stat" style="--sc:#3b82f6"><div class="stat-lbl">WARM PATHS</div><div class="stat-val" style="color:#3b82f6">6</div><div class="stat-sub">Via customer network</div></div>
+      <div class="stat" style="--sc:#ef4444"><div class="stat-lbl">SECURITY INCIDENTS</div><div class="stat-val" style="color:#ef4444">3</div><div class="stat-sub dn">Urgency triggers</div></div>
+    </div>
+    <div class="filter-bar">
+      <input class="srch" id="ae-srch" placeholder="Search accounts&hellip;" oninput="filterAE(this.value)"/>
+      <div class="chip on-ae" onclick="fAE('all',this)">All</div>
+      <div class="chip" onclick="fAE('pipeline',this)">Pipeline</div>
+      <div class="chip" onclick="fAE('t1',this)">Tier 1</div>
+      <div class="chip" onclick="fAE('tech',this)">Tech</div>
+      <div class="chip" onclick="fAE('finserv',this)">Fin Serv</div>
+      <div class="chip" onclick="fAE('exec',this)">Exec Hire</div>
+      <div class="chip" onclick="fAE('incident',this)">Incident</div>
+      <div class="chip" onclick="fAE('warm',this)">Warm Path</div>
+      <div id="ae-ct" class="row-count">Showing 12 accounts</div>
+    </div>
+    <div class="tbl-wrap">
+      <div class="tbl-head ae-grid">
+        <div></div><div class="th">COMPANY</div>
+        <div class="th">ICP FIT</div><div class="th">EXEC PRI.</div>
+        <div class="th">TALENT</div><div class="th">TIMING</div><div class="th">TECH FIT</div>
+        <div class="th">COMPOSITE</div><div class="th">TIER</div><div></div>
+      </div>
+      <div id="ae-body"></div>
+    </div>
+  </div>
+</div>
+
+<!-- AE: RESEARCH -->
+<div id="view-ae-research" class="view">
+  <div class="topbar">
+    <div class="topbar-title">Live Account Research</div>
+    <span class="ws-pill ws-pill-ae">AE — NEW BUSINESS</span>
+    <span class="topbar-meta">4 agents &middot; ~40s per account</span>
+  </div>
+  <div class="content">
+    <div class="rpanel">
+      <div class="rp-title">Research Any Prospect</div>
+      <div class="rp-sub">Agents score ICP fit, exec priorities, talent signals, and warm paths. Existing customers are automatically flagged and excluded from prospect scoring.</div>
+      <div class="r-row">
+        <input class="r-input" id="r-co" placeholder="Company name (e.g. JPMorgan Chase, Microsoft, Target&hellip;)"/>
+        <button class="btn btn-ae" onclick="runResearch()">Run Agents &rarr;</button>
+      </div>
+      <div class="ag-grid">
+        <div class="ag" id="ag-icp"><div class="ag-name">ICP AGENT</div><div class="ag-st" id="ag-icp-s">Industry &middot; firmographics &middot; team</div></div>
+        <div class="ag" id="ag-sig"><div class="ag-name">SIGNAL AGENT</div><div class="ag-st" id="ag-sig-s">Exec priorities &middot; expansion</div></div>
+        <div class="ag" id="ag-tal"><div class="ag-name">TALENT AGENT</div><div class="ag-st" id="ag-tal-s">Security hires &middot; GSOC roles</div></div>
+        <div class="ag" id="ag-syn"><div class="ag-name">SYNTHESIS</div><div class="ag-st" id="ag-syn-s">Awaiting agents&hellip;</div></div>
+      </div>
+      <div class="rbox" id="r-result"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">QUICK RESEARCH</div>
+      <div style="display:flex;flex-wrap:wrap;gap:7px">
+        <div class="chip" onclick="qr('JPMorgan Chase')">JPMorgan Chase</div>
+        <div class="chip" onclick="qr('Microsoft')">Microsoft</div>
+        <div class="chip" onclick="qr('Target Corporation')">Target</div>
+        <div class="chip" onclick="qr('Coinbase')">Coinbase</div>
+        <div class="chip" onclick="qr('Visa')">Visa</div>
+        <div class="chip" onclick="qr('Stripe')">Stripe</div>
+        <div class="chip" onclick="qr('Walgreens')">Walgreens</div>
+        <div class="chip" onclick="qr('BlackRock')">BlackRock</div>
+        <div class="chip" onclick="qr('Google')">Google (test: customer)</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- AE: SIGNALS -->
+<div id="view-ae-signals" class="view">
+  <div class="topbar">
+    <div class="topbar-title">Prospect Signals Feed</div>
+    <span class="ws-pill ws-pill-ae">AE — NEW BUSINESS</span>
+    <span class="topbar-meta">6 unread &middot; prospects only</span>
+  </div>
+  <div class="content">
+    <div class="two-col">
+      <div class="panel"><div class="panel-title">THIS WEEK</div><div id="ae-al"></div></div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div class="panel"><div class="panel-title">BY TYPE</div><div id="ae-breakdown"></div></div>
+        <div class="panel"><div class="panel-title">TOP PROSPECTS</div><div id="ae-movers"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- AE: CONNECTIONS -->
+<div id="view-ae-connections" class="view">
+  <div class="topbar">
+    <div class="topbar-title">LinkedIn Connections</div>
+    <span class="topbar-meta" id="conn-meta">No connections loaded &middot; export from Clay and upload below</span>
+  </div>
+  <div class="content">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:20px">
+      <div class="cfg-card">
+        <div class="cfg-title">Upload Connections CSV</div>
+        <div class="cfg-sub">Export your LinkedIn connections from Clay as CSV. The app cross-references against all prospects and updates Relationship Access scores.</div>
+        <div class="uzone" onclick="document.getElementById('conn-file').click()"
+          ondragover="event.preventDefault();this.style.borderColor='var(--ae)'"
+          ondragleave="this.style.borderColor=''"
+          ondrop="event.preventDefault();this.style.borderColor='';handleConnFile(event.dataTransfer.files[0])">
+          <div style="font-size:22px;margin-bottom:8px">&#128206;</div>
+          <div style="font-family:var(--font-m);font-size:11px;color:var(--text2)">Drop CSV or click to browse</div>
+          <div style="font-family:var(--font-m);font-size:9px;color:var(--text3);margin-top:3px">Needs: First Name, Last Name, Company columns</div>
+        </div>
+        <input type="file" id="conn-file" accept=".csv" style="display:none" onchange="handleConnFile(this.files[0])">
+        <div id="conn-status" style="font-family:var(--font-m);font-size:11px;color:var(--text3);display:none"></div>
+      </div>
+      <div class="cfg-card">
+        <div class="cfg-title">Connection Intelligence</div>
+        <div class="cfg-sub">Matched against all prospects and roster accounts</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+          <div style="background:var(--bg3);border-radius:var(--r);padding:14px;border:1px solid var(--border)">
+            <div style="font-family:var(--font-m);font-size:9px;color:var(--text2);margin-bottom:6px">TOTAL</div>
+            <div style="font-family:var(--font-d);font-size:26px;font-weight:700;color:var(--ae)" id="stat-tc">&#8212;</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:var(--r);padding:14px;border:1px solid var(--border)">
+            <div style="font-family:var(--font-m);font-size:9px;color:var(--text2);margin-bottom:6px">ACCOUNTS MATCHED</div>
+            <div style="font-family:var(--font-d);font-size:26px;font-weight:700;color:var(--amber)" id="stat-wa">&#8212;</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:var(--r);padding:14px;border:1px solid var(--border)">
+            <div style="font-family:var(--font-m);font-size:9px;color:var(--text2);margin-bottom:6px">SECURITY RELEVANT</div>
+            <div style="font-family:var(--font-d);font-size:26px;font-weight:700;color:var(--blue)" id="stat-sc">&#8212;</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:var(--r);padding:14px;border:1px solid var(--border)">
+            <div style="font-family:var(--font-m);font-size:9px;color:var(--text2);margin-bottom:6px">LAST UPDATED</div>
+            <div style="font-family:var(--font-m);font-size:11px;color:var(--text2);margin-top:4px" id="stat-lu">Never</div>
+          </div>
+        </div>
+        <button class="btn" style="width:100%;justify-content:center;color:var(--red)" onclick="clearConns()">Clear connection data</button>
+      </div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden" id="conn-wrap">
+      <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px">
+        <div style="font-family:var(--font-m);font-size:9px;letter-spacing:.15em;color:var(--text2);flex:1">WARM PATH MATCHES</div>
+        <input class="srch" style="width:200px" placeholder="Filter matches&hellip;" oninput="filterConnMatches(this.value)">
+      </div>
+      <div id="conn-body"></div>
+    </div>
+  </div>
+</div>
+
+<!-- AE: CONFIG -->
+<div id="view-ae-config" class="view">
+  <div class="topbar">
+    <div class="topbar-title">ICP &amp; Scoring Config</div>
+    <span class="ws-pill ws-pill-ae">AE — NEW BUSINESS</span>
+    <button class="btn btn-ae" onclick="saveConfig()">Save</button>
+  </div>
+  <div class="content">
+    <div class="admin-grid">
+      <div class="cfg-card">
+        <div class="cfg-title">Scoring Weights</div>
+        <div class="cfg-sub">6 dimensions &middot; must total 100%</div>
+        <div id="w-inputs"></div>
+        <div style="font-family:var(--font-m);font-size:10px;margin-top:6px" id="w-tot">Total: 100%</div>
+      </div>
+      <div class="cfg-card">
+        <div class="cfg-title">Value Proposition</div>
+        <div class="cfg-sub">Used by Signal Agent to score exec priority alignment.</div>
+        <textarea class="ta" id="vp-ta" rows="7">Base Operations decodes the world's threat landscape into actionable security insights, enabling organizations to keep their people, assets, and operations safe. We deliver a common operating picture for crime, unrest, and internal data at global scale — 150M+ mapped incidents from 25,000+ sources across 5,000+ cities. We transform hours of manual intelligence research into minutes of analysis, enabling security teams to shift from reactive crisis management to proactive risk intelligence.</textarea>
+      </div>
+      <div class="cfg-card">
+        <div class="cfg-title">ICP Industry Tiers</div>
+        <div class="cfg-sub">Determines ICP Fit score weighting.</div>
+        <div class="icp-tier"><div class="tier-name" style="color:#00c9a7">TIER 1 — PRIORITY</div><div class="tier-inds">Computer Software &amp; Technology &middot; Banking &amp; Financial Services</div></div>
+        <div class="icp-tier"><div class="tier-name" style="color:var(--amber)">TIER 2 — SECONDARY</div><div class="tier-inds">Insurance &middot; Enterprise Retail (selective) &middot; Utilities &amp; Energy (not O&amp;G) &middot; Entertainment &amp; Media</div></div>
+        <div class="icp-tier"><div class="tier-name" style="color:var(--red)">EXCLUDE</div><div class="tier-inds">Oil &amp; Gas &middot; Hospitality &middot; Apparel &middot; Healthcare (unless EP) &middot; Manufacturing &middot; Higher Education</div></div>
+      </div>
+      <div class="cfg-card">
+        <div class="cfg-title">Anthropic API Key</div>
+        <div class="cfg-sub">Required for Live Research agents. Get your key from <a href="https://console.anthropic.com" target="_blank" style="color:var(--ae)">console.anthropic.com</a>. Stored locally in your browser.</div>
+        <div style="display:flex;gap:7px;margin-bottom:8px">
+          <input type="password" class="ta" id="anthropic-key" style="min-height:0;padding:8px 11px;font-size:12px" placeholder="sk-ant-api03-..."/>
+          <button class="btn btn-ae" onclick="saveAnthropicKey()" style="white-space:nowrap">Save Key</button>
+        </div>
+        <div id="anthropic-key-st" style="font-family:var(--font-m);font-size:10px;color:var(--text3)"></div>
+      </div>
+      <div class="cfg-card">
+        <div class="cfg-title">Sumble API — Live Enrichment</div>
+        <div class="cfg-sub">Powers Technology Fit scores and live job signals. <span style="color:var(--amber)">~5–20 credits per account.</span></div>
+        <div style="display:flex;gap:7px;margin-bottom:8px">
+          <input type="password" class="ta" id="sumble-key" style="min-height:0;padding:8px 11px;font-size:12px" placeholder="Bearer token from Sumble dashboard&hellip;"/>
+          <button class="btn btn-ae" onclick="saveSumbleKey()" style="white-space:nowrap">Save Key</button>
+        </div>
+        <div id="sumble-key-st" style="font-family:var(--font-m);font-size:10px;color:var(--text3);margin-bottom:8px"></div>
+        <div style="font-family:var(--font-m);font-size:11px;color:var(--text2)" id="sumble-st-line">No API key configured</div>
+        <div style="font-family:var(--font-m);font-size:10px;color:var(--text3)" id="sumble-cr-line"></div>
+        <button class="btn" id="sumble-batch" onclick="runBatchEnrich()" style="margin-top:10px;display:none">&#9889; Batch enrich all accounts</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- AE: ROSTER -->
+<div id="view-ae-roster" class="view">
+  <div class="topbar">
+    <div class="topbar-title">Account Roster</div>
+    <span class="topbar-meta">169 accounts &middot; click &rarr; to research with live agents</span>
+    <button class="btn" onclick="exportRoster()">&#8595; Export</button>
+  </div>
+  <div class="content">
+    <div class="filter-bar">
+      <input class="srch" id="ros-srch" placeholder="Search 169 accounts&hellip;" oninput="filterRoster(this.value)"/>
+      <div class="chip on-ae" onclick="rFilt('all',this)">All</div>
+      <div class="chip" onclick="rFilt('finserv',this)">Banking &amp; Finserv</div>
+      <div class="chip" onclick="rFilt('retail',this)">Retail</div>
+      <div class="chip" onclick="rFilt('insurance',this)">Insurance</div>
+      <div class="chip" onclick="rFilt('tech',this)">Technology</div>
+      <div id="ros-ct" class="row-count">Showing 169 accounts</div>
+    </div>
+    <div class="tbl-wrap">
+      <div class="tbl-head roster-grid">
+        <div class="th"></div><div class="th">COMPANY</div><div class="th">SEGMENT</div>
+        <div class="th">SIZE</div><div class="th">HQ</div><div class="th">ICP SIGNAL</div><div></div>
+      </div>
+      <div id="ros-body"></div>
+    </div>
+  </div>
+</div>
+<!-- CS: HEALTH DASHBOARD -->
+<div id="view-cs-dash" class="view">
+  <div class="topbar">
+    <div class="topbar-title">Customer Health Dashboard</div>
+    <span class="ws-pill ws-pill-cs">CS — EXPANSION</span>
+    <span class="topbar-meta">22 customers &middot; renewal &amp; growth focus</span>
+    <button class="btn" onclick="exportCSV('cs')">&#8595; Export</button>
+  </div>
+  <div class="content">
+    <div class="stat-row">
+      <div class="stat" style="--sc:var(--cs)"><div class="stat-lbl">HEALTHY</div><div class="stat-val" style="color:var(--cs)">15</div><div class="stat-sub up">On track</div></div>
+      <div class="stat" style="--sc:var(--amber)"><div class="stat-lbl">NEEDS ATTENTION</div><div class="stat-val" style="color:var(--amber)">5</div><div class="stat-sub">Risk of churn</div></div>
+      <div class="stat" style="--sc:var(--red)"><div class="stat-lbl">AT RISK</div><div class="stat-val" style="color:var(--red)">2</div><div class="stat-sub dn">Leadership change</div></div>
+      <div class="stat" style="--sc:#3b82f6"><div class="stat-lbl">EXPANSION SIGNALS</div><div class="stat-val" style="color:#3b82f6">8</div><div class="stat-sub up">&#8593; 3 new this week</div></div>
+      <div class="stat" style="--sc:#f59e0b"><div class="stat-lbl">RENEWALS DUE</div><div class="stat-val" style="color:#f59e0b">3</div><div class="stat-sub">Next 90 days</div></div>
+    </div>
+    <div class="filter-bar">
+      <input class="srch" id="cs-srch" placeholder="Search customers&hellip;" oninput="filterCS(this.value)"/>
+      <div class="chip on-cs" onclick="fCS('all',this)">All</div>
+      <div class="chip" onclick="fCS('at-risk',this)">At Risk</div>
+      <div class="chip" onclick="fCS('expansion',this)">Expansion Opp</div>
+      <div class="chip" onclick="fCS('exec-change',this)">Exec Change</div>
+      <div class="chip" onclick="fCS('renewal',this)">Renewal Soon</div>
+      <div id="cs-ct" class="row-count">Showing 10 customers</div>
+    </div>
+    <div class="tbl-wrap">
+      <div class="tbl-head cs-grid">
+        <div></div><div class="th">CUSTOMER</div>
+        <div class="th">HEALTH</div><div class="th">USAGE</div>
+        <div class="th">EXPANSION</div><div class="th">RISK FLAGS</div>
+        <div class="th">RENEWAL</div><div class="th">CS PRIORITY</div><div></div>
+      </div>
+      <div id="cs-body"></div>
+    </div>
+  </div>
+</div>
+
+<!-- CS: SIGNALS -->
+<div id="view-cs-signals" class="view">
+  <div class="topbar">
+    <div class="topbar-title">Expansion Signals</div>
+    <span class="ws-pill ws-pill-cs">CS — EXPANSION</span>
+    <span class="topbar-meta">5 unread &middot; customers only</span>
+  </div>
+  <div class="content">
+    <div class="two-col">
+      <div class="panel"><div class="panel-title">THIS WEEK</div><div id="cs-al"></div></div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div class="panel"><div class="panel-title">EXPANSION OPPS</div><div id="cs-exp"></div></div>
+        <div class="panel"><div class="panel-title">RETENTION RISKS</div><div id="cs-risk"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /shell -->
+
+<!-- DETAIL OVERLAY -->
+<div class="overlay" id="overlay" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="detail">
+    <div class="det-hdr">
+      <div><div class="det-co" id="d-co"></div><div class="det-meta" id="d-meta"></div></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <div class="ring" id="d-ring"></div>
+        <button class="close-btn" onclick="document.getElementById('overlay').classList.remove('open')">&#x2715;</button>
+      </div>
+    </div>
+    <div class="det-body" id="d-body"></div>
+  </div>
+</div>
+
+<script>
+const AE_WEIGHTS = {
+  'ICP Fit':20,'Exec Priority Alignment':28,
+  'Talent Signals':18,'Timing / Urgency':14,
+  'Technology Fit':12,'Relationship Access':8
+};
+
+const PROSPECTS = [
+  {name:'JPMorgan Chase',industry:'Banking & Financial Services',employees:'295,000',hq:'New York, NY',rev:'$158B',domain:'jpmorganchase.com',abmTier:1,isPipeline:false,
+   scores:{'ICP Fit':9.6,'Exec Priority Alignment':9.0,'Talent Signals':8.8,'Timing / Urgency':9.2,'Technology Fit':5,'Relationship Access':8.0},
+   signals:['exec','expansion','warm'],
+   brief:"JPMorgan operates in 100+ countries with 5,000+ locations and one of the largest GSOC programs in financial services. Three new intelligence analyst roles recently posted — scaling proactive threat capability. SEA expansion creates immediate demand for street-level data in unfamiliar geographies. Capital One (existing customer) is a direct finserv peer reference.",
+   personas:[{name:'Thomas R.',title:'Managing Director, Global Security',tags:['Ex-FBI','Conference speaker']},{name:'Sandra L.',title:'Director, Physical Security Ops',tags:['ASIS board member','2 mutual connections']},{name:'Mike D.',title:'Sr. Intelligence Analyst (New)',tags:['Posted 4 weeks ago','Entry point']}],
+   warmPath:'Capital One (existing customer — finserv peer) · 2 mutual ASIS connections to Sandra L.',
+   outreach:"Sandra — I noticed you're scaling your intelligence function with three new analyst hires. Most teams at that inflection point hit the same wall: how do you maintain consistency and speed across a global footprint without burning your analysts on data sourcing? We work with Capital One's security team to solve exactly that. Happy to make an introduction.",
+   recentSignals:[{icon:'👥',label:'3 new intelligence analyst roles posted',date:'4 weeks ago'},{icon:'🌏',label:'SEA expansion — 4 new markets',date:'5 weeks ago'},{icon:'🤝',label:'2 shared ASIS connections confirmed',date:'Ongoing'}]},
+  {name:'Microsoft',industry:'Computer Software',employees:'228,000',hq:'Redmond, WA',rev:'$212B',domain:'microsoft.com',abmTier:1,isPipeline:false,
+   scores:{'ICP Fit':9.5,'Exec Priority Alignment':8.8,'Talent Signals':8.5,'Timing / Urgency':8.4,'Technology Fit':5,'Relationship Access':9.2},
+   signals:['expansion','warm','incident'],
+   brief:"Microsoft has 160+ offices worldwide and a world-class GSOC and intelligence function. Datacenter expansion into Mexico, Brazil, and Poland creates direct demand for Base Operations' street-level data. Google and Amazon are existing customers — direct hyperscaler peer references available.",
+   personas:[{name:'Ann T.',title:'VP, Global Security & Resilience',tags:['Ex-Secret Service','Executive buyer']},{name:'James W.',title:'Director, Intelligence Operations',tags:['Intel community','Champion candidate']}],
+   warmPath:'Google & Amazon (existing customers — hyperscaler peers) · Anthropic also a customer',
+   outreach:"James — as Microsoft scales datacenters into LATAM and EMEA, the intelligence burden compounds fast. We work with the security teams at Google and Amazon to give their analysts coverage that would otherwise require 3x the headcount. Happy to make a warm introduction to either team.",
+   recentSignals:[{icon:'🌍',label:'Datacenter expansion — Mexico City, São Paulo, Warsaw',date:'3 weeks ago'},{icon:'🤝',label:'Google & Amazon customer references available',date:'Ongoing'},{icon:'⚠',label:'Civil unrest near Warsaw office',date:'6 weeks ago'}]},
+  {name:'Target Corporation',industry:'Retail',employees:'440,000',hq:'Minneapolis, MN',rev:'$109B',domain:'target.com',abmTier:1,isPipeline:false,
+   scores:{'ICP Fit':8.8,'Exec Priority Alignment':9.5,'Talent Signals':9.0,'Timing / Urgency':9.5,'Technology Fit':5,'Relationship Access':6.5},
+   signals:['incident','exec'],
+   brief:"Target has 2,000+ locations and a sophisticated AP program. ORC and in-store violence are board-level issues — directly aligned with Base Operations' 66% crime reduction proof point. New VP of Assets Protection hired 8 weeks ago from Walmart. Dollar Tree (existing customer) is the ideal reference.",
+   personas:[{name:'Karen H.',title:'VP Assets Protection (New)',tags:['Hired Sep 2024','Ex-Walmart AP','Key buyer']},{name:'David S.',title:'Director, Intelligence & Investigations',tags:['Long tenure','Data-driven']}],
+   warmPath:'Dollar Tree (existing customer — direct retail peer) · Fanatics also a customer',
+   outreach:"Karen — one benchmark as you settle in: we work with Dollar Tree's security team and helped reduce incidents 75% in 6 months. Given what's happening with ORC nationally, the timing felt relevant.",
+   recentSignals:[{icon:'👤',label:'New VP Assets Protection — ex-Walmart AP',date:'8 weeks ago'},{icon:'⚠',label:'ORC incidents cited in Q3 investor materials',date:'6 weeks ago'},{icon:'📰',label:'CEO public statement on employee safety',date:'4 weeks ago'}]},
+  {name:'Coinbase Global',industry:'Crypto / Fintech',employees:'3,400',hq:'San Francisco, CA',rev:'$6.6B',domain:'coinbase.com',abmTier:2,isPipeline:false,
+   scores:{'ICP Fit':8.5,'Exec Priority Alignment':9.2,'Talent Signals':9.5,'Timing / Urgency':9.8,'Technology Fit':5,'Relationship Access':7.2},
+   signals:['incident','exec','expansion'],
+   brief:"Crypto exec targeting is documented and growing. Coinbase's CSO is publicly vocal about proactive intelligence needs. New Head of Physical Security posted 3 weeks ago — perfect buying window. Anthropic (existing customer) provides warm path into SF tech security community.",
+   personas:[{name:'David H.',title:'Chief Security Officer',tags:['Public speaker','LinkedIn active']},{name:'Morgan B.',title:'Head of Physical Security (New)',tags:['Posted 3 weeks ago','Champion candidate']}],
+   warmPath:'Anthropic (existing customer — SF tech ecosystem) · Google customer reference',
+   outreach:"Morgan — as you step into the role, exec protection intelligence for crypto leadership has moved from nice-to-have to critical. We work with companies facing similar threat environments and can show how others map risk to executive residences and travel routes.",
+   recentSignals:[{icon:'⚠',label:'Crypto exec targeting — industry-wide acceleration',date:'Ongoing'},{icon:'👤',label:'New Head of Physical Security posted',date:'3 weeks ago'},{icon:'🌍',label:'Expansion — Dublin, Singapore',date:'5 weeks ago'}]},
+  {name:'Stripe',industry:'Computer Software / Fintech',employees:'8,000',hq:'San Francisco, CA',rev:'$14B',domain:'stripe.com',abmTier:2,isPipeline:false,
+   scores:{'ICP Fit':8.6,'Exec Priority Alignment':7.5,'Talent Signals':9.0,'Timing / Urgency':8.2,'Technology Fit':5,'Relationship Access':6.5},
+   signals:['exec','expansion'],
+   brief:"New Head of Corporate Security posted 4 weeks ago — direct buying window. Stripe is scaling rapidly into MENA and APAC markets they don't know well. Fidelity, Capital One, and Workday are existing customers in adjacent spaces.",
+   personas:[{name:'Unknown',title:'Head of Corporate Security (New)',tags:['Posted 4 weeks ago','Research needed']}],
+   warmPath:'Fidelity & Capital One (existing customers — finserv peers) · Workday (B2B SaaS peer)',
+   outreach:"Lead with the new hire angle and intel bottleneck framing. Stripe is scaling fast into markets they don't know — classic Base Operations buying moment.",
+   recentSignals:[{icon:'👤',label:'New Head of Corporate Security posted',date:'4 weeks ago'},{icon:'🌍',label:'Expansion into UAE, India, Brazil',date:'6 weeks ago'}]},
+  {name:'Visa Inc.',industry:'Banking & Financial Services',employees:'28,000',hq:'San Francisco, CA',rev:'$35B',domain:'visa.com',abmTier:1,isPipeline:false,
+   scores:{'ICP Fit':9.3,'Exec Priority Alignment':7.8,'Talent Signals':7.5,'Timing / Urgency':7.8,'Technology Fit':5,'Relationship Access':8.4},
+   signals:['warm','expansion'],
+   brief:"Visa operates in 200+ countries with significant EP and travel risk obligations. Expansion into 15 new Africa markets creates demand for threat coverage in unfamiliar geographies. Capital One, Fidelity, and Expedia are all existing customers.",
+   personas:[{name:'Unknown',title:'VP, Corporate Security',tags:['Research needed','Ex-Secret Service likely']}],
+   warmPath:'Capital One · Fidelity · Expedia (all existing customers — finserv + travel references)',
+   outreach:"Lead with EP transformation case study. Visa executives travel extensively to high-risk markets. Frame around duty-of-care confidence and data-backed itinerary decisions.",
+   recentSignals:[{icon:'🌍',label:'Visa Direct — 15 new Africa market launches',date:'3 weeks ago'},{icon:'🤝',label:'Capital One & Fidelity references available',date:'Ongoing'}]},
+  {name:'Walgreens Boots Alliance',industry:'Retail',employees:'330,000',hq:'Deerfield, IL',rev:'$147B',domain:'walgreens.com',abmTier:2,isPipeline:false,
+   scores:{'ICP Fit':8.4,'Exec Priority Alignment':9.0,'Talent Signals':7.5,'Timing / Urgency':8.8,'Technology Fit':5,'Relationship Access':6.2},
+   signals:['incident'],
+   brief:"Walgreens has been publicly hammered by ORC — CEO has made safety a top priority. 9,000+ US locations plus Boots UK. Dollar Tree and Fanatics are existing customers for retail peer references.",
+   personas:[{name:'Unknown',title:'VP Asset Protection',tags:['Key buyer','Research needed']}],
+   warmPath:'Dollar Tree & Fanatics (existing customers — retail peer references)',
+   outreach:"Lead hard with the 75% incident reduction retail case study. Walgreens is publicly wrestling with exactly the problem Base Operations solves.",
+   recentSignals:[{icon:'⚠',label:'Store closures due to ORC — CEO public statement',date:'3 weeks ago'},{icon:'📰',label:'Board calls out theft as material business risk',date:'5 weeks ago'}]},
+  {name:'BlackRock',industry:'Banking & Financial Services',employees:'20,000',hq:'New York, NY',rev:'$17.9B',domain:'blackrock.com',abmTier:2,isPipeline:false,
+   scores:{'ICP Fit':8.8,'Exec Priority Alignment':7.5,'Talent Signals':7.0,'Timing / Urgency':7.2,'Technology Fit':5,'Relationship Access':8.0},
+   signals:['warm','expansion'],
+   brief:"BlackRock operates in 30+ countries with active EP and travel risk programs. New Dubai and Riyadh presence creates MENA demand. Fidelity, Capital One, and First National Bank are all existing customers.",
+   personas:[{name:'Unknown',title:'Director, Corporate Security',tags:['Research needed']}],
+   warmPath:'Fidelity · Capital One · First National Bank (existing customers — finserv references)',
+   outreach:"Lead with MENA expansion and EP framing. Reference Fidelity or Capital One for credibility.",
+   recentSignals:[{icon:'🌍',label:'New offices — Dubai, Riyadh announced',date:'4 weeks ago'}]},
+  {name:'Uber Technologies',industry:'Computer Software',employees:'32,000',hq:'San Francisco, CA',rev:'$41B',domain:'uber.com',abmTier:2,isPipeline:false,
+   scores:{'ICP Fit':9.0,'Exec Priority Alignment':7.8,'Talent Signals':7.5,'Timing / Urgency':7.5,'Technology Fit':5,'Relationship Access':7.2},
+   signals:['expansion','warm'],
+   brief:"Uber operates in 70+ countries with a large security team focused on EP, geopolitical risk, and new market evaluation. Waymo is an existing Base Operations customer — direct autonomous vehicle peer reference.",
+   personas:[{name:'Unknown',title:'Global Head of Safety & Security',tags:['Research via LinkedIn']}],
+   warmPath:'Waymo (existing customer — AV/mobility peer) · Google & Amazon ecosystem',
+   outreach:"Lead with the autonomous vehicle case study on new market expansion. Uber is constantly entering markets they don't know well — immediately relevant.",
+   recentSignals:[{icon:'🌍',label:'New market launches — Southeast Africa',date:'5 weeks ago'}]},
+  {name:'Merck & Co.',industry:'Healthcare / Life Sciences',employees:'67,000',hq:'Rahway, NJ',rev:'$60B',domain:'merck.com',abmTier:2,isPipeline:true,
+   scores:{'ICP Fit':8.0,'Exec Priority Alignment':8.5,'Talent Signals':8.2,'Timing / Urgency':9.2,'Technology Fit':5,'Relationship Access':7.5},
+   signals:['pipeline','expansion','exec'],
+   brief:"IN PIPELINE — Active deal. Merck has global clinical trial operations across LATAM, Africa, and APAC. BioMarin is an existing customer in life sciences — direct peer reference. Prioritize deal velocity.",
+   personas:[{name:'Unknown',title:'Director, Global Security',tags:['Active deal contact']}],
+   warmPath:'BioMarin (existing customer — life sciences peer) · PwC (customer — advisory)',
+   outreach:"Active deal — maintain cadence. Lead with clinical trial risk and supply chain use cases. BioMarin reference for life sciences credibility.",
+   recentSignals:[{icon:'🔄',label:'IN PIPELINE — active deal, close stage',date:'Active'},{icon:'🌍',label:'Clinical trial expansion — Africa, SEA',date:'5 weeks ago'}]},
+  {name:'Kaiser Permanente',industry:'Healthcare (EP-focused)',employees:'220,000',hq:'Oakland, CA',rev:'$100B',domain:'kaiserpermanente.org',abmTier:2,isPipeline:true,
+   scores:{'ICP Fit':7.8,'Exec Priority Alignment':9.0,'Talent Signals':8.0,'Timing / Urgency':9.0,'Technology Fit':5,'Relationship Access':7.2},
+   signals:['pipeline','incident'],
+   brief:"IN PIPELINE — Active deal. Kaiser has 700+ medical facilities in high-crime urban areas. Healthcare worker violence is a board-level concern. CA legislation creating compliance urgency.",
+   personas:[{name:'Unknown',title:'VP, Workplace Safety & Security',tags:['Active deal contact']}],
+   warmPath:'BioMarin (customer — healthcare ecosystem) · Altura Credit Union (Bay Area)',
+   outreach:"Active deal. Lead with clinician safety case study. CA healthcare worker safety legislation is a compliance urgency driver.",
+   recentSignals:[{icon:'🔄',label:'IN PIPELINE — active deal',date:'Active'},{icon:'⚠',label:'Healthcare worker violence in CA facilities',date:'4 weeks ago'}]},
+  {name:'Levi Strauss & Co.',industry:'Retail / Apparel',employees:'15,000',hq:'San Francisco, CA',rev:'$6.2B',domain:'levi.com',abmTier:3,isPipeline:true,
+   scores:{'ICP Fit':6.8,'Exec Priority Alignment':8.0,'Talent Signals':7.5,'Timing / Urgency':8.5,'Technology Fit':5,'Relationship Access':7.0},
+   signals:['pipeline','expansion'],
+   brief:"IN PIPELINE — Active deal. 3,000+ retail locations globally including high-risk LATAM and APAC. Apparel is typically deprioritized in ICP but pipeline status justifies pursuit.",
+   personas:[{name:'Unknown',title:'Director, Global Security',tags:['Active deal contact','SF-based']}],
+   warmPath:'Dollar Tree & Fanatics (customers — retail refs) · Anthropic (SF ecosystem)',
+   outreach:"Active deal — maintain cadence. Dollar Tree reference is the strongest closer here.",
+   recentSignals:[{icon:'🔄',label:'IN PIPELINE — active deal',date:'Active'},{icon:'🌍',label:'APAC retail expansion',date:'6 weeks ago'}]}
+];
+
+const CUSTOMERS = [
+  {name:'Google',industry:'Computer Software',employees:'182,000',hq:'Mountain View, CA',rev:'$307B',health:'healthy',usagePct:88,expansionSignals:['RTO enforcement — 180k employees','New datacenter geographies'],riskFlags:[],renewalDue:null,csScore:9.2,csPriority:'Expand',brief:"Flagship tech customer. Full GSOC deployment, active EP and intelligence use cases. RTO mandate affecting 180,000+ employees is an ongoing upsell trigger.",recentSignals:[{icon:'🏢',label:'RTO enforcement — 180,000 employees',date:'4 weeks ago'},{icon:'🌍',label:'New datacenter regions — upsell surface',date:'Ongoing'}],expansionOpps:['New datacenter geographies in LATAM / EMEA','Expanded EP coverage for executive travel'],healthMetrics:{usage:'88%',nps:'9.1',lastQBR:'Nov 2024',renewal:'Apr 2025',champion:'Strong'}},
+  {name:'Amazon',industry:'Computer Software / Logistics',employees:'1,500,000',hq:'Seattle, WA',rev:'$575B',health:'healthy',usagePct:91,expansionSignals:['Logistics expansion — Colombia, Vietnam, Nigeria','Warehouse unrest — EU'],riskFlags:[],renewalDue:null,csScore:9.5,csPriority:'Expand',brief:"Fortune 10 flagship — highest-profile reference account. Active deployment across logistics and EP use cases. Ongoing geographic expansion continuously creates new deployment surface.",recentSignals:[{icon:'🌍',label:'New logistics hubs — Colombia, Vietnam, Nigeria',date:'4 weeks ago'},{icon:'⚠',label:'Warehouse protests — 3 EU locations',date:'2 weeks ago'}],expansionOpps:['New logistics geographies in West Africa and SEA','Route security for EU distribution network'],healthMetrics:{usage:'91%',nps:'9.4',lastQBR:'Nov 2024',renewal:'Jan 2025',champion:'Strong'}},
+  {name:'Salesforce',industry:'Computer Software',employees:'72,000',hq:'San Francisco, CA',rev:'$34B',health:'at-risk',usagePct:62,expansionSignals:['RTO mandate — 40,000 employees'],riskFlags:['New VP Global Security — 6 weeks ago','Usage dropped 18% since leadership change'],renewalDue:'Feb 2025',csScore:6.8,csPriority:'Retain',brief:"AT RISK — Leadership change. New VP Global Security hired 6 weeks ago and hasn't been onboarded to Base Operations. Usage has dropped 18%. Proactive executive introduction and re-onboarding session needed immediately.",recentSignals:[{icon:'⚠',label:'VP Global Security change — usage declining',date:'6 weeks ago'},{icon:'📉',label:'Platform usage dropped 18%',date:'4 weeks ago'}],expansionOpps:['RTO mandate — 30+ offices, location coverage upsell'],healthMetrics:{usage:'62%',nps:'7.2',lastQBR:'Sep 2024',renewal:'Feb 2025',champion:'At risk'}},
+  {name:'Capital One',industry:'Banking & Financial Services',employees:'52,000',hq:'McLean, VA',rev:'$38B',health:'at-risk',usagePct:71,expansionSignals:['New Director Corporate Security'],riskFlags:['New Director Corporate Security — 5 weeks ago','QBR overdue'],renewalDue:'Mar 2025',csScore:7.1,csPriority:'Retain + Expand',brief:"AT RISK — Leadership change. New Director of Corporate Security posted 5 weeks ago and has not been introduced to Base Operations. QBR is overdue. Renewal in March — address in December.",recentSignals:[{icon:'👤',label:'New Director Corporate Security — not yet onboarded',date:'5 weeks ago'},{icon:'📅',label:'QBR overdue — schedule immediately',date:'Overdue'}],expansionOpps:['New Director = platform re-evaluation window','GSOC coverage expansion across DC/VA footprint'],healthMetrics:{usage:'71%',nps:'7.8',lastQBR:'Aug 2024',renewal:'Mar 2025',champion:'At risk'}},
+  {name:'Fidelity',industry:'Banking & Financial Services',employees:'70,000',hq:'Boston, MA',rev:'$26B',health:'healthy',usagePct:84,expansionSignals:['New international office openings'],riskFlags:[],renewalDue:null,csScore:8.8,csPriority:'Expand',brief:"Strong customer — active use across site assessment and travel risk programs. New international offices in Singapore and Dublin create fresh location coverage demand.",recentSignals:[{icon:'🌍',label:'New offices — Singapore and Dublin',date:'3 weeks ago'}],expansionOpps:['Singapore and Dublin office coverage','Travel risk expansion for international exec program'],healthMetrics:{usage:'84%',nps:'8.9',lastQBR:'Oct 2024',renewal:'Jun 2025',champion:'Strong'}},
+  {name:'Workday',industry:'Computer Software',employees:'18,000',hq:'Pleasanton, CA',rev:'$7.3B',health:'healthy',usagePct:79,expansionSignals:['APAC expansion underway'],riskFlags:[],renewalDue:null,csScore:8.2,csPriority:'Expand',brief:"Solid deployment with strong champion. APAC expansion into 4 new markets is a clear upsell opportunity.",recentSignals:[{icon:'🌍',label:'APAC expansion — 4 new office markets',date:'5 weeks ago'}],expansionOpps:['APAC office coverage — 4 new markets'],healthMetrics:{usage:'79%',nps:'8.5',lastQBR:'Oct 2024',renewal:'Sep 2025',champion:'Strong'}},
+  {name:'Dollar Tree',industry:'Retail',employees:'200,000',hq:'Chesapeake, VA',rev:'$28B',health:'healthy',usagePct:93,expansionSignals:['New store openings in high-crime areas'],riskFlags:[],renewalDue:null,csScore:9.1,csPriority:'Expand',brief:"Highest usage score in portfolio. Active daily use across 16,000 locations — flagship retail proof point. Best retail reference account.",recentSignals:[{icon:'🏪',label:'New store openings — high-crime markets',date:'Ongoing'}],expansionOpps:['New store location assessments','Family Dollar co-brand expansion'],healthMetrics:{usage:'93%',nps:'9.3',lastQBR:'Nov 2024',renewal:'Aug 2025',champion:'Very strong'}},
+  {name:'Anthropic',industry:'Computer Software / AI',employees:'2,500',hq:'San Francisco, CA',rev:'$3B+',health:'healthy',usagePct:76,expansionSignals:['Rapid headcount growth','New office geographies'],riskFlags:[],renewalDue:null,csScore:8.4,csPriority:'Expand',brief:"Fast-growing AI company with a maturing security program. Rapid headcount growth and new office geographies creating ongoing demand. Best reference for crypto and high-growth tech accounts.",recentSignals:[{icon:'📈',label:'Rapid headcount growth — new office locations',date:'Ongoing'}],expansionOpps:['New office geographies as headcount scales','EP program for high-profile executives'],healthMetrics:{usage:'76%',nps:'8.7',lastQBR:'Nov 2024',renewal:'Jul 2025',champion:'Strong'}},
+  {name:'CEVA Logistics',industry:'Logistics / 3PL',employees:'85,000',hq:'Baar, Switzerland',rev:'$4.1B',health:'needs-attention',usagePct:58,expansionSignals:['New APAC routes'],riskFlags:['Low platform usage — below benchmark','No QBR in 5 months'],renewalDue:'Jan 2025',csScore:6.2,csPriority:'Retain',brief:"NEEDS ATTENTION — Usage below benchmark and renewal in January. No QBR in 5 months. Strong product-market fit but relationship has stalled. Need executive sponsor re-engagement.",recentSignals:[{icon:'📉',label:'Usage below benchmark — engagement needed',date:'Ongoing'}],expansionOpps:['APAC route security as network expands'],healthMetrics:{usage:'58%',nps:'6.9',lastQBR:'Jul 2024',renewal:'Jan 2025',champion:'Weak'}},
+  {name:'Disney',industry:'Entertainment & Media',employees:'220,000',hq:'Burbank, CA',rev:'$88B',health:'healthy',usagePct:82,expansionSignals:['International park expansions','Live event security'],riskFlags:[],renewalDue:null,csScore:8.6,csPriority:'Expand',brief:"Strong customer across park security and EP use cases. International theme park expansions in Asia and Europe are clear coverage expansion triggers.",recentSignals:[{icon:'🌍',label:'International park expansion — Asia and Europe',date:'4 weeks ago'}],expansionOpps:['New park geographies in APAC and Europe','Live event security program expansion'],healthMetrics:{usage:'82%',nps:'8.8',lastQBR:'Oct 2024',renewal:'May 2025',champion:'Strong'}}
+];
+
+const AE_ALERTS = [
+  {color:'var(--red)',co:'Walgreens',text:'CEO public statement — store closures due to ORC, safety declared top priority',time:'3 days ago',cat:'SECURITY INCIDENT'},
+  {color:'var(--cs)',co:'Coinbase',text:'Head of Physical Security role posted — new leader, direct outreach window open',time:'4 days ago',cat:'EXEC HIRE'},
+  {color:'var(--blue)',co:'Target',text:'New VP Assets Protection now active on LinkedIn — profile published with priorities',time:'5 days ago',cat:'EXEC HIRE'},
+  {color:'var(--blue)',co:'Microsoft',text:'Civil unrest near Warsaw office — employee travel disruption reported',time:'5 days ago',cat:'SECURITY INCIDENT'},
+  {color:'#00c9a7',co:'JPMorgan Chase',text:'2 shared ASIS connections to Director Physical Security confirmed',time:'6 days ago',cat:'WARM PATH'},
+  {color:'var(--amber)',co:'Merck',text:'Pipeline deal — contact re-engaged after 2-week silence, demo rescheduled',time:'1 week ago',cat:'PIPELINE UPDATE'}
+];
+const CS_ALERTS = [
+  {color:'var(--red)',co:'Salesforce',text:'Platform usage dropped 18% since new VP hire — champion gap, intervention needed',time:'2 days ago',cat:'RETENTION RISK'},
+  {color:'var(--red)',co:'Capital One',text:'QBR overdue, new Director not yet onboarded — renewal in 90 days',time:'3 days ago',cat:'RETENTION RISK'},
+  {color:'var(--cs)',co:'Amazon',text:'Warehouse protests in 3 EU locations — upsell opportunity for site assessment',time:'4 days ago',cat:'EXPANSION SIGNAL'},
+  {color:'var(--cs)',co:'Google',text:'RTO enforcement expanding — 180,000 employees, 40+ office locations potential',time:'5 days ago',cat:'EXPANSION SIGNAL'},
+  {color:'var(--amber)',co:'CEVA Logistics',text:'Renewal in 45 days — no QBR in 5 months, usage below benchmark',time:'5 days ago',cat:'RENEWAL RISK'}
+];
+
+// ══════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════
+function composite(scores){
+  let t=0,w=0;
+  for(const[k,v] of Object.entries(scores)){const wt=AE_WEIGHTS[k]||0;t+=v*wt;w+=wt;}
+  return w?(t/w).toFixed(1):0;
+}
+function sc(v){
+  // Brand quintile scale: Q1(best)=#78C6F5 ... Q5(worst)=#BD268E
+  if(v>=9)return'#78C6F5';
+  if(v>=7.5)return'#6A93E7';
+  if(v>=6)return'#676DD8';
+  if(v>=4.5)return'#9151B9';
+  return'#BD268E';
+}
+function scCS(v){
+  if(v>=8.5)return'var(--cs)';if(v>=7)return'var(--amber)';return'var(--red)';
+}
+function tierBadge(t){
+  const m={1:['#00c9a7','rgba(0,201,167,.08)','T1'],2:['var(--amber)','rgba(245,158,11,.08)','T2'],3:['var(--text2)','var(--bg3)','T3']};
+  const[c,bg,l]=m[t]||m[3];
+  return`<span class="tbadge" style="color:${c};background:${bg};border:1px solid ${c}30">${l}</span>`;
+}
+function plBadge(){return`<span class="tbadge" style="color:var(--amber);background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3)">PIPELINE</span>`;}
+function sigLines(sigs){
+  const m={pipeline:['var(--amber)','Pipeline'],exec:['var(--cs)','Exec hire'],expansion:['var(--blue)','Expanding'],incident:['var(--red)','Incident'],warm:['#00c9a7','Warm path']};
+  return sigs.slice(0,2).map(s=>{const[c,l]=m[s]||['var(--text2)',s];return`<div class="row-sig-line"><div class="sig-dot" style="background:${c}"></div><span style="color:${c}">${l}</span></div>`;}).join('');
+}
+function hBadge(h){
+  const m={'healthy':['#00c9a7','rgba(0,201,167,.08)','Healthy'],'at-risk':['var(--red)','rgba(239,68,68,.08)','At Risk'],'needs-attention':['var(--amber)','rgba(245,158,11,.08)','Needs Attn']};
+  const[c,bg,l]=m[h]||m['healthy'];
+  return`<span class="tbadge" style="color:${c};background:${bg};border:1px solid ${c}30">${l}</span>`;
+}
+function csPriBadge(p){
+  const m={'Expand':['var(--cs)','var(--cs-dim)'],'Retain':['var(--red)','rgba(239,68,68,.08)'],'Retain + Expand':['var(--amber)','rgba(245,158,11,.08)']};
+  const[c,bg]=m[p]||['var(--text2)','var(--bg3)'];
+  return`<span class="tbadge" style="color:${c};background:${bg};border:1px solid ${c}30">${p}</span>`;
+}
+
+// ══════════════════════════════════════
+// AE TABLE
+// ══════════════════════════════════════
+function renderAE(list){
+  const b=document.getElementById('ae-body');b.innerHTML='';
+  list.forEach((a,i)=>{
+    const cv=parseFloat(composite(a.scores)),c=sc(cv);
+    const row=document.createElement('div');
+    row.className='acct-row ae-grid';
+    if(a.isPipeline)row.style.borderLeft='2px solid var(--amber)';
+    row.onclick=()=>openAE(a);
+    const scoreVals=Object.values(a.scores);
+    row.innerHTML=`
+      <div class="row-rank">${String(i+1).padStart(2,'0')}</div>
+      <div><div class="co-name">${a.name}</div><div class="co-meta">${a.industry} &middot; ${a.hq}</div></div>
+      ${scoreVals.map(v=>`<div class="sc-cell"><div class="sc-bar-w"><div class="sc-bar" style="width:${v*10}%;background:${sc(v)}"></div></div><div class="sc-n" style="color:${sc(v)}">${v}</div></div>`).join('')}
+      <div style="display:flex;align-items:center;gap:7px">
+        <div class="ring" style="color:${c};border-color:${c}50;background:${c}10">${cv}</div>
+        <div class="row-sigs">${sigLines(a.signals)}</div>
+      </div>
+      <div>${a.isPipeline?plBadge():tierBadge(a.abmTier)}</div>
+      <div><button class="act-btn" onclick="event.stopPropagation();openAE(PROSPECTS[${PROSPECTS.indexOf(a)}])">&#8594;</button></div>`;
+    b.appendChild(row);
+  });
+  document.getElementById('ae-ct').textContent=`Showing ${list.length} accounts`;
+  const urg=list.filter(a=>parseFloat(composite(a.scores))>=8.5&&!a.isPipeline).length;
+  const el=document.getElementById('s-urg');if(el)el.textContent=urg;
+}
+let aeF='all';
+function fAE(f,el){aeF=f;document.querySelectorAll('#view-ae-dash .chip').forEach(c=>{c.classList.remove('on-ae');});el.classList.add('on-ae');applyAE();}
+function filterAE(q){applyAE(q);}
+function applyAE(q=document.getElementById('ae-srch')?.value||''){
+  let f=[...PROSPECTS];
+  if(aeF==='pipeline')f=f.filter(a=>a.isPipeline);
+  if(aeF==='t1')f=f.filter(a=>a.abmTier===1);
+  if(aeF==='tech')f=f.filter(a=>a.industry.toLowerCase().match(/software|tech|crypto|fintech/));
+  if(aeF==='finserv')f=f.filter(a=>a.industry.toLowerCase().match(/banking|financial/));
+  if(aeF==='exec')f=f.filter(a=>a.signals.includes('exec'));
+  if(aeF==='incident')f=f.filter(a=>a.signals.includes('incident'));
+  if(aeF==='warm')f=f.filter(a=>a.signals.includes('warm'));
+  if(q)f=f.filter(a=>a.name.toLowerCase().includes(q.toLowerCase())||a.industry.toLowerCase().includes(q.toLowerCase()));
+  f.sort((a,b)=>{if(a.isPipeline&&!b.isPipeline)return-1;if(!a.isPipeline&&b.isPipeline)return 1;return parseFloat(composite(b.scores))-parseFloat(composite(a.scores));});
+  renderAE(f);
+}
+
+// ══════════════════════════════════════
+// CS TABLE
+// ══════════════════════════════════════
+function renderCS(list){
+  const b=document.getElementById('cs-body');b.innerHTML='';
+  list.forEach((c,i)=>{
+    const row=document.createElement('div');
+    row.className='acct-row cs-grid';
+    if(c.health==='at-risk')row.style.borderLeft='2px solid var(--red)';
+    row.onclick=()=>openCS(c);
+    const rh=c.riskFlags.length?`<span style="color:var(--red);font-family:var(--font-m);font-size:9px">&#9888; ${c.riskFlags[0].split('—')[0].trim()}</span>`:`<span style="color:var(--text3);font-family:var(--font-m);font-size:9px">None</span>`;
+    const rw=c.renewalDue?`<span style="color:var(--amber);font-family:var(--font-m);font-size:10px;font-weight:500">${c.renewalDue}</span>`:`<span style="color:var(--text3);font-family:var(--font-m);font-size:10px">&gt;90 days</span>`;
+    const uc=c.usagePct>=80?'var(--cs)':c.usagePct>=60?'var(--amber)':'var(--red)';
+    row.innerHTML=`
+      <div class="row-rank">${String(i+1).padStart(2,'0')}</div>
+      <div><div class="co-name">${c.name}</div><div class="co-meta">${c.industry} &middot; ${c.hq}</div></div>
+      <div>${hBadge(c.health)}</div>
+      <div class="sc-cell"><div class="sc-bar-w" style="flex:1"><div class="sc-bar" style="width:${c.usagePct}%;background:${uc}"></div></div><span style="font-family:var(--font-m);font-size:10px;color:${uc}">${c.usagePct}%</span></div>
+      <div><span style="font-family:var(--font-m);font-size:10px;color:var(--cs)">${c.expansionSignals.length} signal${c.expansionSignals.length!==1?'s':''}</span></div>
+      <div>${rh}</div><div>${rw}</div>
+      <div>${csPriBadge(c.csPriority)}</div>
+      <div><button class="act-btn" onclick="event.stopPropagation();openCS(CUSTOMERS[${CUSTOMERS.indexOf(c)}])">&#8594;</button></div>`;
+    b.appendChild(row);
+  });
+  document.getElementById('cs-ct').textContent=`Showing ${list.length} customers`;
+}
+let csF='all';
+function fCS(f,el){csF=f;document.querySelectorAll('#view-cs-dash .chip').forEach(c=>{c.classList.remove('on-cs');});el.classList.add('on-cs');applyCS();}
+function filterCS(q){applyCS(q);}
+function applyCS(q=document.getElementById('cs-srch')?.value||''){
+  let f=[...CUSTOMERS];
+  if(csF==='at-risk')f=f.filter(c=>c.health==='at-risk'||c.health==='needs-attention');
+  if(csF==='expansion')f=f.filter(c=>c.expansionSignals.length>0&&c.health==='healthy');
+  if(csF==='exec-change')f=f.filter(c=>c.riskFlags.some(r=>r.toLowerCase().match(/director|vp|cso/)));
+  if(csF==='renewal')f=f.filter(c=>c.renewalDue);
+  if(q)f=f.filter(c=>c.name.toLowerCase().includes(q.toLowerCase()));
+  f.sort((a,b)=>b.csScore-a.csScore);
+  renderCS(f);
+}
+
+// ══════════════════════════════════════
+// DETAIL PANELS
+// ══════════════════════════════════════
+function openAE(a){
+  const cv=parseFloat(composite(a.scores)),c=sc(cv);
+  document.getElementById('d-co').textContent=a.name;
+  document.getElementById('d-meta').textContent=`${a.industry} \u00b7 ${a.employees} employees \u00b7 ${a.hq} \u00b7 ${a.rev}`;
+  const ring=document.getElementById('d-ring');
+  ring.textContent=cv;ring.style.color=c;ring.style.borderColor=c+'60';ring.style.background=c+'12';
+  document.getElementById('d-body').innerHTML=`
+    ${a.isPipeline?'<div style="display:inline-flex;align-items:center;gap:6px;margin-bottom:14px;padding:5px 10px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:5px;font-family:var(--font-m);font-size:10px;color:var(--amber)">&#128260; IN PIPELINE \u2014 ACTIVE DEAL</div>':''}
+    <div class="det-sec"><div class="det-sec-title">WHY NOW \u2014 ACCOUNT BRIEF</div><div class="brief" style="border-left-color:var(--ae)">${a.brief}</div></div>
+    <div class="det-sec"><div class="det-sec-title">SCORE BREAKDOWN</div><div class="score-rows">
+      ${Object.entries(a.scores).map(([k,v])=>`<div class="score-row"><div class="sc-label">${k} <span style="font-size:9px;color:var(--text3)">(${AE_WEIGHTS[k]||0}%)</span></div><div class="sc-track"><div class="sc-fill" style="width:${v*10}%;background:${sc(v)}"></div></div><div class="sc-num-d" style="color:${sc(v)}">${v}</div></div>`).join('')}
+    </div></div>
+    <div class="det-sec"><div class="det-sec-title">RECENT SIGNALS</div><div class="sig-list">
+      ${a.recentSignals.map(s=>`<div class="sig-item"><div class="sig-ico">${s.icon}</div><div><div class="sig-t">${s.label}</div><div class="sig-d">${s.date}</div></div></div>`).join('')}
+    </div></div>
+    <div class="det-sec"><div class="det-sec-title">TARGET PERSONAS</div><div class="pgrid">
+      ${a.personas.map(p=>`<div class="pcard"><div class="p-name">${p.name}</div><div class="p-title">${p.title}</div><div class="p-tags">${p.tags.map(t=>`<span class="p-tag">${t}</span>`).join('')}</div></div>`).join('')}
+    </div></div>
+    <div class="det-sec"><div class="det-sec-title">WARM PATHS</div>${buildWarmHTML(a)}</div>
+    <div class="det-sec"><div class="det-sec-title">SUGGESTED OUTREACH</div><div class="obox"><div class="olbl">RECOMMENDED ANGLE</div><div class="otxt">${a.outreach}</div></div></div>`;
+  document.getElementById('overlay').classList.add('open');
+  if(a.domain) injectSumble(a.domain);
+}
+
+function openCS(c){
+  const col=scCS(c.csScore);
+  document.getElementById('d-co').textContent=c.name;
+  document.getElementById('d-meta').textContent=`${c.industry} \u00b7 ${c.employees} employees \u00b7 ${c.hq}`;
+  const ring=document.getElementById('d-ring');
+  ring.textContent=c.csScore;ring.style.color=col;ring.style.borderColor=col+'60';ring.style.background=col+'12';
+  document.getElementById('d-body').innerHTML=`
+    <div class="det-sec"><div class="det-sec-title">CUSTOMER STATUS</div><div class="brief" style="border-left-color:${col}">${c.brief}</div></div>
+    <div class="det-sec"><div class="det-sec-title">ACCOUNT HEALTH</div><div class="hgrid">
+      <div class="hcard"><div class="hlbl">PLATFORM USAGE</div><div class="hval" style="color:${c.usagePct>=80?'var(--cs)':c.usagePct>=60?'var(--amber)':'var(--red)'}">${c.usagePct}%</div></div>
+      <div class="hcard"><div class="hlbl">NPS</div><div class="hval" style="color:var(--cs)">${c.healthMetrics.nps}</div></div>
+      <div class="hcard"><div class="hlbl">LAST QBR</div><div class="hval" style="font-size:14px">${c.healthMetrics.lastQBR}</div></div>
+      <div class="hcard"><div class="hlbl">RENEWAL</div><div class="hval" style="font-size:14px;color:${c.renewalDue?'var(--amber)':'var(--cs)'}">${c.healthMetrics.renewal}</div></div>
+    </div>
+    ${c.riskFlags.length?`<div style="margin-top:10px">${c.riskFlags.map(f=>`<div class="sig-item" style="border-color:rgba(239,68,68,.2)"><div class="sig-ico">&#9888;</div><div><div class="sig-t" style="color:var(--red)">${f}</div></div></div>`).join('')}</div>`:''}</div>
+    <div class="det-sec"><div class="det-sec-title">EXPANSION OPPORTUNITIES</div>
+      ${c.expansionOpps.map(o=>`<div style="background:var(--bg3);border:1px solid var(--border);border-left:3px solid var(--cs);border-radius:var(--r);padding:10px 13px;margin-bottom:7px;font-size:12px">${o}</div>`).join('')}
+    </div>
+    <div class="det-sec"><div class="det-sec-title">RECENT SIGNALS</div><div class="sig-list">
+      ${c.recentSignals.map(s=>`<div class="sig-item"><div class="sig-ico">${s.icon}</div><div><div class="sig-t">${s.label}</div><div class="sig-d">${s.date}</div></div></div>`).join('')}
+    </div></div>`;
+  document.getElementById('overlay').classList.add('open');
+}
+
+// ══════════════════════════════════════
+// ALERTS
+// ══════════════════════════════════════
+function renderAlerts(){
+  document.getElementById('ae-al').innerHTML=AE_ALERTS.map(a=>`<div class="al-item"><div class="a-dot" style="background:${a.color}"></div><div><div class="a-text"><span style="font-weight:500;color:#00c9a7">${a.co}</span> \u2014 ${a.text}</div><div class="a-meta">${a.cat} \u00b7 ${a.time}</div></div></div>`).join('');
+  const bc={'Incidents':0,'Exec Hires':0,'Expansions':0,'Warm Paths':0,'Pipeline':0};
+  AE_ALERTS.forEach(a=>{if(a.cat.includes('INCIDENT'))bc['Incidents']++;if(a.cat.includes('EXEC'))bc['Exec Hires']++;if(a.cat.includes('EXPANSION'))bc['Expansions']++;if(a.cat.includes('WARM'))bc['Warm Paths']++;if(a.cat.includes('PIPELINE'))bc['Pipeline']++;});
+  document.getElementById('ae-breakdown').innerHTML=Object.entries(bc).map(([k,v])=>`<div class="mi"><span style="color:var(--text2)">${k}</span><span style="font-family:var(--font-m);margin-left:auto">${v}</span></div>`).join('');
+  const top=[...PROSPECTS].filter(a=>!a.isPipeline).sort((a,b)=>parseFloat(composite(b.scores))-parseFloat(composite(a.scores))).slice(0,5);
+  document.getElementById('ae-movers').innerHTML=top.map(a=>{const cv=parseFloat(composite(a.scores));return`<div class="mi"><span style="font-family:var(--font-m);font-size:10px;color:${sc(cv)};min-width:26px">${cv}</span><span>${a.name}</span></div>`;}).join('');
+  document.getElementById('cs-al').innerHTML=CS_ALERTS.map(a=>`<div class="al-item"><div class="a-dot" style="background:${a.color}"></div><div><div class="a-text"><span style="font-weight:500;color:var(--cs)">${a.co}</span> \u2014 ${a.text}</div><div class="a-meta">${a.cat} \u00b7 ${a.time}</div></div></div>`).join('');
+  document.getElementById('cs-exp').innerHTML=CUSTOMERS.filter(c=>c.health==='healthy'&&c.expansionSignals.length>0).slice(0,4).map(c=>`<div class="mi"><span style="color:var(--cs)">&#8593;</span><span>${c.name}</span><span style="font-family:var(--font-m);font-size:9px;color:var(--text2);margin-left:auto">${c.expansionSignals.length} signals</span></div>`).join('');
+  document.getElementById('cs-risk').innerHTML=CUSTOMERS.filter(c=>c.health!=='healthy').map(c=>`<div class="mi"><span style="color:var(--red)">&#9888;</span><span>${c.name}</span><span style="font-family:var(--font-m);font-size:9px;color:var(--red);margin-left:auto">${c.health==='at-risk'?'At risk':'Needs attn'}</span></div>`).join('');
+}
+
+// ══════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════
+function renderConfig(){
+  document.getElementById('w-inputs').innerHTML=Object.entries(AE_WEIGHTS).map(([k,v])=>`<div class="w-row"><div class="w-lbl">${k}</div><input class="w-inp" type="number" value="${v}" min="0" max="100" data-key="${k}" onchange="updW()"/><div style="font-family:var(--font-m);font-size:11px;color:var(--text2)">%</div></div>`).join('');
+}
+function updW(){
+  let t=0;document.querySelectorAll('.w-inp').forEach(i=>t+=parseInt(i.value)||0);
+  const el=document.getElementById('w-tot');el.textContent=`Total: ${t}%`;el.style.color=t===100?'#00c9a7':'var(--red)';
+}
+function saveConfig(){
+  document.querySelectorAll('.w-inp').forEach(i=>{AE_WEIGHTS[i.dataset.key]=parseInt(i.value)||0;});
+  applyAE();alert('Scoring weights saved.');
+}
+
+// ══════════════════════════════════════
+// RESEARCH
+// ══════════════════════════════════════
+async function runResearch(){
+  const name=document.getElementById('r-co').value.trim();
+  if(!name){document.getElementById('r-co').focus();return;}
+  if(!anthropicKey){
+    const res=document.getElementById('r-result');
+    res.className='rbox show';
+    res.innerHTML='<div style="color:var(--ae);font-family:var(--font-m);font-size:11px">&#9888; No Anthropic API key configured.<br><br>Go to <strong>ICP &amp; Scoring</strong> and paste your key (from <a href="https://console.anthropic.com" target="_blank" style="color:var(--ae)">console.anthropic.com</a>) then click Save Key.</div>';
+    return;
+  }
+  ['icp','sig','tal','syn'].forEach(id=>{
+    document.getElementById('ag-'+id).className='ag';
+    document.getElementById('ag-'+id+'-s').className='ag-st';
+    document.getElementById('ag-'+id+'-s').innerHTML={icp:'Industry \u00b7 firmographics \u00b7 team',sig:'Exec priorities \u00b7 expansion',tal:'Security hires \u00b7 GSOC roles',syn:'Awaiting agents\u2026'}[id];
+  });
+  const res=document.getElementById('r-result');res.className='rbox';res.innerHTML='';
+  const setR=(id,msg)=>{document.getElementById('ag-'+id).className='ag run';const s=document.getElementById('ag-'+id+'-s');s.className='ag-st run';s.innerHTML='<div class="spin"></div>'+msg;};
+  const setD=(id,msg)=>{document.getElementById('ag-'+id).className='ag done';const s=document.getElementById('ag-'+id+'-s');s.className='ag-st done';s.innerHTML='&#10003; '+msg;};
+  setR('icp','Checking ICP and firmographics\u2026');setR('sig','Scanning signals\u2026');setR('tal','Checking security hires\u2026');
+  const vp=document.getElementById('vp-ta')?.value||'Base Operations decodes the world\'s threat landscape into actionable security insights.';
+  const prompt=`You are an account intelligence analyst at Base Operations, a SaaS platform that decodes the world's threat landscape into actionable security insights for corporate security teams.
+
+PLATFORM: ${vp}
+
+ICP: Tier 1: Computer Software/Technology, Banking/Financial Services. Tier 2: Insurance, Enterprise Retail, Utilities/Energy (not O&G), Entertainment. Exclude: Oil/Gas, Hospitality, Apparel, Healthcare (unless EP-focused), Manufacturing, Higher Ed. Firmographics: 5000+ employees, $1B+ revenue, US/Canada HQ, 100+ locations or exec travel program. Must have dedicated security analyst function.
+
+TARGET PERSONAS: CSO, VP Security, Global Security Director, Head of Global Security, Director Corporate Security, GSOC Manager, Security Analyst, Threat Intelligence Analyst, Travel Risk Manager, Asset Protection Director.
+
+EXISTING CUSTOMERS (flag — do NOT score as new prospect): Amazon, Expedia, Fidelity, Capital One, Waymo, Workday, Anthropic, Jewelers Mutual, AT&T, Google, First National Bank, American Electric Power, Disney, Hashgraph, Salesforce, BioMarin, Fanatics, PwC, Altura Credit Union, Dollar Tree, CEVA Logistics
+
+ACTIVE PIPELINE: Levis, Kaiser Permanente, Merck
+
+Analyze "${name}". Respond ONLY with valid JSON:
+{"is_customer":false,"is_pipeline":false,"disqualified":false,"disqualify_reason":null,"icp_tier":1,"scores":{"ICP Fit":7,"Exec Priority Alignment":7,"Talent Signals":7,"Timing / Urgency":7,"Technology Fit":5,"Relationship Access":6},"why_now":"3-4 sentence brief","top_signals":["signal 1","signal 2","signal 3"],"best_persona":"champion and why","best_reference":"which existing customer to reference and why"}`;
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':anthropicKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    const data=await resp.json();
+    const text=data.content?.find(b=>b.type==='text')?.text||'';
+    let p;try{p=JSON.parse(text.replace(/```json\n?|\n?```/g,'').trim());}catch{throw new Error('Parse failed');}
+    setD('icp','Scored');setD('sig','Signals found');setD('tal','Assessed');
+    setR('syn','Generating brief\u2026');await new Promise(r=>setTimeout(r,600));setD('syn','Complete');
+    res.className='rbox show';
+    if(p.is_customer){res.innerHTML=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><div style="font-family:var(--font-d);font-size:17px;font-weight:700">${name}</div><span class="tbadge" style="color:var(--cs);background:var(--cs-dim);border:1px solid var(--cs-bdr)">EXISTING CUSTOMER</span></div><div class="brief" style="border-left-color:var(--cs)">This account is already a Base Operations customer. Switch to the <strong>CS Workspace</strong> to view their health score, expansion opportunities, and renewal status.</div>`;return;}
+    if(p.is_pipeline){res.innerHTML=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><div style="font-family:var(--font-d);font-size:17px;font-weight:700">${name}</div><span class="tbadge" style="color:var(--amber);background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3)">IN PIPELINE</span></div><div class="brief" style="border-left-color:var(--amber)">This account is already in your active pipeline. It appears in the Target Accounts dashboard. Maintain deal cadence.</div>`;return;}
+    if(p.disqualified){res.innerHTML=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><div style="font-family:var(--font-d);font-size:17px;font-weight:700">${name}</div><span class="tbadge" style="color:var(--red);background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3)">DISQUALIFIED</span></div><div class="brief" style="border-left-color:var(--red)">${p.disqualify_reason}</div>`;return;}
+    const s2=p.scores||{};
+    const cv=Object.keys(AE_WEIGHTS).reduce((acc,k)=>acc+(s2[k]||5)*(AE_WEIGHTS[k]/100),0).toFixed(1);
+    const c=sc(parseFloat(cv));
+    res.innerHTML=`
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px">
+        <div><div style="font-family:var(--font-d);font-size:17px;font-weight:700;margin-bottom:3px">${name}</div>
+        <div style="font-family:var(--font-m);font-size:10px;color:var(--text2)">RESEARCH COMPLETE \u00b7 ICP TIER ${p.icp_tier} \u00b7 ${new Date().toLocaleTimeString()}</div></div>
+        <div class="ring" style="color:${c};border-color:${c}60;background:${c}12">${cv}</div>
+      </div>
+      <div class="brief" style="margin-bottom:14px">${p.why_now}</div>
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:14px">
+        ${Object.entries(s2).map(([k,v])=>`<div style="background:var(--bg4);border-radius:6px;padding:8px;border:1px solid var(--border)"><div style="font-family:var(--font-m);font-size:8px;color:var(--text2);margin-bottom:4px">${k.split(' ')[0].toUpperCase()}</div><div style="font-family:var(--font-d);font-size:17px;font-weight:700;color:${sc(v)}">${v}</div></div>`).join('')}
+      </div>
+      ${p.top_signals?.length?`<div style="margin-bottom:12px"><div style="font-family:var(--font-m);font-size:9px;color:var(--text2);margin-bottom:6px;letter-spacing:.12em">TOP SIGNALS</div>${p.top_signals.map(s=>`<div style="display:flex;gap:7px;margin-bottom:5px;font-size:12px"><span style="color:#00c9a7">&#8594;</span>${s}</div>`).join('')}</div>`:''}
+      ${p.best_persona?`<div style="margin-bottom:8px"><div style="font-family:var(--font-m);font-size:9px;color:var(--text2);margin-bottom:4px">BEST CHAMPION</div><div style="font-size:12px">${p.best_persona}</div></div>`:''}
+      ${p.best_reference?`<div style="margin-bottom:14px"><div style="font-family:var(--font-m);font-size:9px;color:var(--text2);margin-bottom:4px">REFERENCE TO USE</div><div style="font-size:12px">${p.best_reference}</div></div>`:''}
+      <button class="btn btn-ae" onclick="this.textContent='&#10003; Added';this.disabled=true">+ Add to Target Accounts</button>`;
+  }catch(err){
+    ['icp','sig','tal','syn'].forEach(id=>{document.getElementById('ag-'+id).className='ag err';});
+    res.className='rbox show';
+    res.innerHTML=`<div style="color:var(--red);font-family:var(--font-m);font-size:11px">&#9888; Research failed \u2014 check API connection.<br><br>${err.message}</div>`;
+  }
+}
+function qr(name){document.getElementById('r-co').value=name;runResearch();}
+
+// ══════════════════════════════════════
+// EXPORT
+// ══════════════════════════════════════
+function exportCSV(ws){
+  if(ws==='ae'){
+    const h=['Rank','Company','Industry','HQ','ABM Tier','Pipeline',...Object.keys(AE_WEIGHTS),'Composite'];
+    const sorted=[...PROSPECTS].sort((a,b)=>parseFloat(composite(b.scores))-parseFloat(composite(a.scores)));
+    const rows=sorted.map((a,i)=>[i+1,a.name,a.industry,a.hq,a.abmTier,a.isPipeline?'Yes':'No',...Object.values(a.scores),composite(a.scores)]);
+    dl([h,...rows],'baseops-ae.csv');
+  }else{
+    const h=['Customer','Industry','HQ','Health','Usage%','CS Score','Priority','Renewal'];
+    dl([h,...CUSTOMERS.map(c=>[c.name,c.industry,c.hq,c.health,c.usagePct,c.csScore,c.csPriority,c.renewalDue||''])],'baseops-cs.csv');
+  }
+}
+function dl(data,fn){
+  const csv=data.map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=fn;a.click();
+}
+
+// ══════════════════════════════════════
+// NAV
+// ══════════════════════════════════════
+let CWS='ae';
+function switchWS(ws){
+  CWS=ws;
+  document.getElementById('tab-ae').className='ws-tab'+(ws==='ae'?' on-ae':'');
+  document.getElementById('tab-cs').className='ws-tab'+(ws==='cs'?' on-cs':'');
+  document.getElementById('nav-ae').style.display=ws==='ae'?'block':'none';
+  document.getElementById('nav-cs').style.display=ws==='cs'?'block':'none';
+  document.getElementById('pdot').style.background=ws==='ae'?'var(--ae)':'var(--cs)';
+  document.getElementById('fws').textContent=ws==='ae'?'AE \u00b7 New Business':'CS \u00b7 Expansion';
+  document.getElementById('fct').textContent=ws==='ae'?'12 target accounts':'22 customers';
+  go(ws==='ae'?'ae-dash':'cs-dash');
+}
+function go(view){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+view)?.classList.add('active');
+  const cls=view.startsWith('ae')?'on-ae':'on-cs';
+  const navEl=view.startsWith('ae')?document.querySelectorAll('#nav-ae .nav-item'):document.querySelectorAll('#nav-cs .nav-item');
+  navEl.forEach(n=>n.classList.remove('on-ae','on-cs'));
+  const idx={'ae-dash':0,'ae-research':1,'ae-roster':2,'ae-signals':3,'ae-config':4,'ae-connections':5,'cs-dash':0,'cs-signals':1}[view]??0;
+  navEl[idx]?.classList.add(cls);
+}
+
+// ══════════════════════════════════════
+// ANTHROPIC API KEY
+// ══════════════════════════════════════
+let anthropicKey = '';
+function loadAnthropicKey() {
+  try {
+    anthropicKey = localStorage.getItem('baseops_akey') || '';
+    if (anthropicKey) {
+      const inp = document.getElementById('anthropic-key');
+      if (inp) inp.value = '•'.repeat(20);
+      const st = document.getElementById('anthropic-key-st');
+      if (st) { st.textContent = '✓ API key loaded'; st.style.color = 'var(--ae)'; }
+    }
+  } catch(e) {}
+}
+function saveAnthropicKey() {
+  const inp = document.getElementById('anthropic-key');
+  const val = inp ? inp.value.trim() : '';
+  if (!val || val.startsWith('•')) return;
+  if (!val.startsWith('sk-ant-')) {
+    const st = document.getElementById('anthropic-key-st');
+    if (st) { st.textContent = '✗ Key should start with sk-ant-'; st.style.color = 'var(--red)'; }
+    return;
+  }
+  anthropicKey = val;
+  try { localStorage.setItem('baseops_akey', val); } catch(e) {}
+  inp.value = '•'.repeat(20);
+  const st = document.getElementById('anthropic-key-st');
+  if (st) { st.textContent = '✓ API key saved'; st.style.color = 'var(--ae)'; }
+}
+
+// ══════════════════════════════════════
+// ROSTER
+// ══════════════════════════════════════
+const ROSTER = [{"name": "American Express", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "New York, NY", "icpHint": 1}, {"name": "Bank of America", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "Charlotte, NC", "icpHint": 1}, {"name": "Bloomberg", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "New York, NY", "icpHint": 1}, {"name": "Charles Schwab", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "Westlake, Texas", "icpHint": 1}, {"name": "Citi", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "New York, New York", "icpHint": 1}, {"name": "Goldman Sachs", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "New York, New York", "icpHint": 1}, {"name": "JPMorganChase", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "New York, NY", "icpHint": 1}, {"name": "Morgan Stanley", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "New York, NY", "icpHint": 1}, {"name": "PNC", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "Pittsburgh, Pennsylvania", "icpHint": 1}, {"name": "Truist", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "Charlotte, North Carolina", "icpHint": 1}, {"name": "U.S. Bank", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "Minneapolis, MN", "icpHint": 1}, {"name": "Wells Fargo", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "San Francisco, California", "icpHint": 1}, {"name": "Adobe", "segment": "Technology", "size": "10,001+ employees", "location": "San Jose, CA", "icpHint": 1}, {"name": "Airbnb", "segment": "Technology", "size": "5,001-10,000 employees", "location": "San Francisco, CA", "icpHint": 1}, {"name": "Apple", "segment": "Technology", "size": "10,001+ employees", "location": "Cupertino, California", "icpHint": 1}, {"name": "DoorDash", "segment": "Technology", "size": "10,001+ employees", "location": "San Francisco, California", "icpHint": 1}, {"name": "Intuit", "segment": "Technology", "size": "10,001+ employees", "location": "Mountain View, California", "icpHint": 1}, {"name": "Meta", "segment": "Technology", "size": "10,001+ employees", "location": "Menlo Park, CA", "icpHint": 1}, {"name": "ServiceNow", "segment": "Technology", "size": "10,001+ employees", "location": "Santa Clara, CA", "icpHint": 1}, {"name": "VMware", "segment": "Technology", "size": "10,001+ employees", "location": "Palo Alto, CA", "icpHint": 1}, {"name": "Wolters Kluwer Financial & Corporate Compliance", "segment": "Technology", "size": "10,001+ employees", "location": "New York, NY", "icpHint": 1}, {"name": "Ally", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "Detroit, MI", "icpHint": 1}, {"name": "Ameriprise Financial Services, LLC", "segment": "Banking & Financial Services", "size": "5,001-10,000 employees", "location": "Minneapolis, MN", "icpHint": 1}, {"name": "BB&T", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "Charlotte, NC", "icpHint": 1}, {"name": "BMO U.S.", "segment": "Banking & Financial Services", "size": "5,001-10,000 employees", "location": "Chicago, Illinois", "icpHint": 1}, {"name": "BNY", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "New York, NY", "icpHint": 1}, {"name": "Barclays Investment Bank", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "New York, NY", "icpHint": 1}, {"name": "Block", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "Oakland, California", "icpHint": 1}, {"name": "Cantor Fitzgerald", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "New York, New York", "icpHint": 1}, {"name": "Citizens", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "Providence, Rhode Island", "icpHint": 1}, {"name": "Empower", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "Greenwood Village, CO", "icpHint": 1}, {"name": "Equitable", "segment": "Banking & Financial Services", "size": "5,001-10,000 employees", "location": "New York, NY", "icpHint": 1}, {"name": "FIS", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "Jacksonville, Florida", "icpHint": 1}, {"name": "Fannie Mae", "segment": "Banking & Financial Services", "size": "5,001-10,000 employees", "location": "Washington, District of Columbia", "icpHint": 1}, {"name": "Fifth Third Bank", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "Cincinnati, Ohio", "icpHint": 1}, {"name": "Freddie Mac", "segment": "Banking & Financial Services", "size": "5,001-10,000 employees", "location": "McLean, VA", "icpHint": 1}, {"name": "Global Payments Inc.", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "Atlanta, Georgia", "icpHint": 1}, {"name": "Huntington National Bank", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "Columbus, Ohio", "icpHint": 1}, {"name": "ICE", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "Atlanta, GA", "icpHint": 1}, {"name": "Lincoln Financial", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "Radnor, PA", "icpHint": 1}, {"name": "M&T Bank", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "Buffalo, New York", "icpHint": 1}, {"name": "Marsh McLennan", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "New York, NY", "icpHint": 1}, {"name": "Northern Trust", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "Chicago, Illinois", "icpHint": 1}, {"name": "Principal Financial Group", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "Des Moines, Iowa", "icpHint": 1}, {"name": "Prudential Financial", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "Newark, New Jersey", "icpHint": 1}, {"name": "Raymond James", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "St. Petersburg, Florida", "icpHint": 1}, {"name": "S&P Global", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "New York, NY", "icpHint": 1}, {"name": "Santander US", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "Boston, MA", "icpHint": 1}, {"name": "State Street", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "Boston, Massachusetts", "icpHint": 1}, {"name": "SunTrust", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "Charlotte, NC", "icpHint": 1}, {"name": "Synchrony", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "Stamford, Connecticut", "icpHint": 1}, {"name": "TSYS", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "Columbus, GA", "icpHint": 1}, {"name": "The Hartford", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "Hartford, CT", "icpHint": 1}, {"name": "Transamerica", "segment": "Banking & Financial Services", "size": "5,001-10,000 employees", "location": "Baltimore, Maryland", "icpHint": 1}, {"name": "USAA", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "San Antonio, Texas", "icpHint": 1}, {"name": "Vanguard", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "Valley Forge, PA", "icpHint": 1}, {"name": "Arrow Electronics", "segment": "Technology", "size": "10,001+ employees", "location": "Centennial, Colorado", "icpHint": 1}, {"name": "Avnet", "segment": "Technology", "size": "10,001+ employees", "location": "Phoenix, AZ", "icpHint": 1}, {"name": "Booking Holdings (NASDAQ: BKNG)", "segment": "Technology", "size": "10,001+ employees", "location": "Norwalk, CT", "icpHint": 1}, {"name": "Carvana", "segment": "Technology", "size": "10,001+ employees", "location": "Tempe, Arizona", "icpHint": 1}, {"name": "eBay", "segment": "Technology", "size": "10,001+ employees", "location": "San Jose, CA", "icpHint": 1}, {"name": "AAA Auto Club Enterprises", "segment": "Insurance", "size": "10,001+ employees", "location": "Costa Mesa, California", "icpHint": 2}, {"name": "AAA-The Auto Club Group", "segment": "Insurance", "size": "5,001-10,000 employees", "location": "Dearborn, MI", "icpHint": 2}, {"name": "AIG", "segment": "Insurance", "size": "10,001+ employees", "location": "New York, NY", "icpHint": 2}, {"name": "AXA Investment Managers", "segment": "Insurance", "size": "10,001+ employees", "location": "New York City , New York", "icpHint": 2}, {"name": "Aflac", "segment": "Insurance", "size": "10,001+ employees", "location": "Columbus, Georgia", "icpHint": 2}, {"name": "Allstate", "segment": "Insurance", "size": "10,001+ employees", "location": "Northbrook, Illinois", "icpHint": 2}, {"name": "American Family Insurance", "segment": "Insurance", "size": "10,001+ employees", "location": "Madison, WI", "icpHint": 2}, {"name": "Assurant", "segment": "Insurance", "size": "10,001+ employees", "location": "Atlanta, Georgia", "icpHint": 2}, {"name": "Berkshire Hathaway", "segment": "Insurance", "size": "10,001+ employees", "location": "omaha", "icpHint": 2}, {"name": "BlueCross BlueShield of South Carolina", "segment": "Insurance", "size": "10,001+ employees", "location": "Columbia, South Carolina", "icpHint": 2}, {"name": "CNA Insurance", "segment": "Insurance", "size": "5,001-10,000 employees", "location": "Chicago, Illinois", "icpHint": 2}, {"name": "Everest", "segment": "Insurance", "size": "1,001-5,000 employees", "location": "Warren, New Jersey", "icpHint": 2}, {"name": "Farmers Insurance", "segment": "Insurance", "size": "10,001+ employees", "location": "Woodland Hills, CA", "icpHint": 2}, {"name": "GEICO", "segment": "Insurance", "size": "10,001+ employees", "location": "Chevy Chase, MD", "icpHint": 2}, {"name": "Gallagher", "segment": "Insurance", "size": "10,001+ employees", "location": "Rolling Meadows, IL", "icpHint": 2}, {"name": "Humana", "segment": "Insurance", "size": "10,001+ employees", "location": "Louisville, Kentucky", "icpHint": 2}, {"name": "Liberty Mutual Insurance", "segment": "Insurance", "size": "10,001+ employees", "location": "Boston, MA", "icpHint": 2}, {"name": "Markel", "segment": "Insurance", "size": "1,001-5,000 employees", "location": "Glen Allen, Virginia", "icpHint": 2}, {"name": "MetLife", "segment": "Insurance", "size": "10,001+ employees", "location": "New York, NY", "icpHint": 2}, {"name": "Nationwide", "segment": "Insurance", "size": "10,001+ employees", "location": "scottsdale", "icpHint": 2}, {"name": "Old Republic International", "segment": "Insurance", "size": "10,001+ employees", "location": "Chicago, Illinois", "icpHint": 2}, {"name": "Progressive Insurance", "segment": "Insurance", "size": "10,001+ employees", "location": "Mayfield Village, Ohio", "icpHint": 2}, {"name": "Reinsurance Group of America, Incorporated", "segment": "Insurance", "size": "1,001-5,000 employees", "location": "Chesterfield, Missouri", "icpHint": 2}, {"name": "Sedgwick", "segment": "Insurance", "size": "10,001+ employees", "location": "london", "icpHint": 2}, {"name": "Sedgwick Claims Management Services, Inc.", "segment": "Insurance", "size": "10,001+ employees", "location": "Columbus, Ohio", "icpHint": 2}, {"name": "State Farm", "segment": "Insurance", "size": "10,001+ employees", "location": "Bloomington, Illinois", "icpHint": 2}, {"name": "Travelers", "segment": "Insurance", "size": "10,001+ employees", "location": "New York, NY", "icpHint": 2}, {"name": "Unum", "segment": "Insurance", "size": "10,001+ employees", "location": "Chattanooga, TN", "icpHint": 2}, {"name": "W. R. Berkley Corporation", "segment": "Insurance", "size": "5,001-10,000 employees", "location": "Greenwich, CT", "icpHint": 2}, {"name": "Zurich North America", "segment": "Insurance", "size": "10,001+ employees", "location": "Schaumburg, IL", "icpHint": 2}, {"name": "AutoZone", "segment": "Retail", "size": "10,001+ employees", "location": "Memphis, TN", "icpHint": 2}, {"name": "BJ's Wholesale Club", "segment": "Retail", "size": "10,001+ employees", "location": "Marlborough, MA", "icpHint": 2}, {"name": "Bath & Body Works", "segment": "Retail", "size": "10,001+ employees", "location": "Columbus, Ohio", "icpHint": 2}, {"name": "Best Buy", "segment": "Retail", "size": "10,001+ employees", "location": "Richfield, Minnesota", "icpHint": 2}, {"name": "CarMax", "segment": "Retail", "size": "10,001+ employees", "location": "Richmond, Virginia", "icpHint": 2}, {"name": "Costco Wholesale", "segment": "Retail", "size": "10,001+ employees", "location": "Seattle, WA", "icpHint": 2}, {"name": "DICK'S Sporting Goods", "segment": "Retail", "size": "10,001+ employees", "location": "Coraopolis, PA", "icpHint": 2}, {"name": "Dollar General", "segment": "Retail", "size": "10,001+ employees", "location": "Goodlettsville, TN", "icpHint": 2}, {"name": "Kroger", "segment": "Retail", "size": "10,001+ employees", "location": "Cincinnati, Ohio", "icpHint": 2}, {"name": "Lowe's Companies, Inc.", "segment": "Retail", "size": "10,001+ employees", "location": "Mooresville, NC", "icpHint": 2}, {"name": "Macy's", "segment": "Retail", "size": "10,001+ employees", "location": "New York, NY", "icpHint": 2}, {"name": "Michaels Stores", "segment": "Retail", "size": "10,001+ employees", "location": "Irving, Texas", "icpHint": 2}, {"name": "Nordstrom", "segment": "Retail", "size": "10,001+ employees", "location": "Seattle, Washington", "icpHint": 2}, {"name": "O'Reilly Auto Parts", "segment": "Retail", "size": "10,001+ employees", "location": "Springfield, MO", "icpHint": 2}, {"name": "PetSmart", "segment": "Retail", "size": "10,001+ employees", "location": "Phoenix, Arizona", "icpHint": 2}, {"name": "Ross Stores, Inc.", "segment": "Retail", "size": "10,001+ employees", "location": "Dublin, CA", "icpHint": 2}, {"name": "Sam's Club", "segment": "Retail", "size": "10,001+ employees", "location": "Bentonville, Arkansas", "icpHint": 2}, {"name": "The Home Depot", "segment": "Retail", "size": "10,001+ employees", "location": "Atlanta, Georgia", "icpHint": 2}, {"name": "The TJX Companies, Inc.", "segment": "Retail", "size": "10,001+ employees", "location": "Framingham, MA", "icpHint": 2}, {"name": "Tractor Supply Company", "segment": "Retail", "size": "10,001+ employees", "location": "Brentwood, TN", "icpHint": 2}, {"name": "Ulta Beauty", "segment": "Retail", "size": "10,001+ employees", "location": "Bolingbrook, IL", "icpHint": 2}, {"name": "Walmart", "segment": "Retail", "size": "10,001+ employees", "location": "Bentonville, Arkansas", "icpHint": 2}, {"name": "Apollo Global Management, Inc.", "segment": "Banking & Financial Services", "size": "1,001-5,000 employees", "location": "New York, New York", "icpHint": 1}, {"name": "Athene", "segment": "Banking & Financial Services", "size": "1,001-5,000 employees", "location": "West Des Moines, IA", "icpHint": 1}, {"name": "Blackstone", "segment": "Banking & Financial Services", "size": "1,001-5,000 employees", "location": "New York, NY", "icpHint": 1}, {"name": "Brookfield", "segment": "Banking & Financial Services", "size": "1,001-5,000 employees", "location": "New York, New York", "icpHint": 1}, {"name": "Capital Group", "segment": "Banking & Financial Services", "size": "5,001-10,000 employees", "location": "Los Angeles, CA", "icpHint": 1}, {"name": "Discover Network", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "Riverwoods, IL", "icpHint": 1}, {"name": "First Citizens Bank", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "Raleigh, North Carolina", "icpHint": 1}, {"name": "First Citizens Bank and Trust Company, Inc.", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "Columbia, SC", "icpHint": 1}, {"name": "Huntington Bank", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "indianapolis", "icpHint": 1}, {"name": "KKR", "segment": "Banking & Financial Services", "size": "1,001-5,000 employees", "location": "New York, New York", "icpHint": 1}, {"name": "New York Life Insurance Company", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "New York, New York", "icpHint": 1}, {"name": "Northwestern Mutual", "segment": "Banking & Financial Services", "size": "5,001-10,000 employees", "location": "Milwaukee, WI", "icpHint": 1}, {"name": "Quicken Loans", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "Detroit, MI", "icpHint": 1}, {"name": "StoneX Group Inc.", "segment": "Banking & Financial Services", "size": "1,001-5,000 employees", "location": "New York, NY", "icpHint": 1}, {"name": "Union Bank", "segment": "Banking & Financial Services", "size": "10,001+ employees", "location": "San Francisco, CA", "icpHint": 1}, {"name": "Wilmington Trust", "segment": "Banking & Financial Services", "size": "1,001-5,000 employees", "location": "Wilmington, DE", "icpHint": 1}, {"name": "EXL", "segment": "Insurance", "size": "10,001+ employees", "location": "Overland Park, KS", "icpHint": 2}, {"name": "HUB International, Ltd.", "segment": "Insurance", "size": "10,001+ employees", "location": "Fort Myers, FL", "icpHint": 2}, {"name": "Old Republic Specialty Insurance Group", "segment": "Insurance", "size": "10,001+ employees", "location": "Chicago, IL", "icpHint": 2}, {"name": "ReSource Pro", "segment": "Insurance", "size": "10,001+ employees", "location": "New York, New York", "icpHint": 2}, {"name": "The Cincinnati Insurance Companies", "segment": "Insurance", "size": "1,001-5,000 employees", "location": "Fairfield, OH", "icpHint": 2}, {"name": "7-Eleven", "segment": "Retail", "size": "10,001+ employees", "location": "Irving, TX", "icpHint": 2}, {"name": "ALDI USA", "segment": "Retail", "size": "10,001+ employees", "location": "Batavia, Illinois", "icpHint": 2}, {"name": "Ahold Delhaize USA", "segment": "Retail", "size": "10,001+ employees", "location": "Quincy, Massachusetts", "icpHint": 2}, {"name": "Albertsons Companies", "segment": "Retail", "size": "10,001+ employees", "location": "Boise, Idaho", "icpHint": 2}, {"name": "Ashley Global Retail", "segment": "Retail", "size": "10,001+ employees", "location": "Tampa, FL", "icpHint": 2}, {"name": "Barnes & Noble College", "segment": "Retail", "size": "10,001+ employees", "location": "Florham Park, NJ", "icpHint": 2}, {"name": "Bealls", "segment": "Retail", "size": "10,001+ employees", "location": "nan", "icpHint": 2}, {"name": "Bealls, Inc.", "segment": "Retail", "size": "10,001+ employees", "location": "Bradenton, FL", "icpHint": 2}, {"name": "Bridgestone Retail Operations, LLC", "segment": "Retail", "size": "10,001+ employees", "location": "Nashville, Tennessee", "icpHint": 2}, {"name": "Cabela's", "segment": "Retail", "size": "10,001+ employees", "location": "Sidney, Nebraska", "icpHint": 2}, {"name": "Chewy", "segment": "Retail", "size": "10,001+ employees", "location": "Plantation, Florida", "icpHint": 2}, {"name": "DSW Designer Shoe Warehouse", "segment": "Retail", "size": "10,001+ employees", "location": "Columbus, Ohio", "icpHint": 2}, {"name": "Family Dollar", "segment": "Retail", "size": "10,001+ employees", "location": "Chesapeake, Virginia", "icpHint": 2}, {"name": "GIANT Food Stores, LLC", "segment": "Retail", "size": "10,001+ employees", "location": "Carlisle, PA", "icpHint": 2}, {"name": "GNC", "segment": "Retail", "size": "10,001+ employees", "location": "Pittsburgh, PA", "icpHint": 2}, {"name": "H E B Grocery Co", "segment": "Retail", "size": "10,001+ employees", "location": "San Antonio, Texas", "icpHint": 2}, {"name": "Harbor Freight Tools", "segment": "Retail", "size": "10,001+ employees", "location": "Calabasas, CA", "icpHint": 2}, {"name": "Heritage Grocers Group", "segment": "Retail", "size": "10,001+ employees", "location": "Ontario, California", "icpHint": 2}, {"name": "Hobby Lobby", "segment": "Retail", "size": "10,001+ employees", "location": "Oklahoma City, OK", "icpHint": 2}, {"name": "Journeys", "segment": "Retail", "size": "10,001+ employees", "location": "Nashville, Tennessee", "icpHint": 2}, {"name": "Kohl's", "segment": "Retail", "size": "10,001+ employees", "location": "Menomonee Falls, Wisconsin", "icpHint": 2}, {"name": "Maverik, Inc.", "segment": "Retail", "size": "10,001+ employees", "location": "SALT LAKE CITY, Utah", "icpHint": 2}, {"name": "Murphy USA", "segment": "Retail", "size": "10,001+ employees", "location": "El Dorado, Arkansas", "icpHint": 2}, {"name": "OfficeMax", "segment": "Retail", "size": "10,001+ employees", "location": "naperville", "icpHint": 2}, {"name": "Pilot Company", "segment": "Retail", "size": "10,001+ employees", "location": "Knoxville, TN", "icpHint": 2}, {"name": "Pilot Flying J", "segment": "Retail", "size": "10,001+ employees", "location": "Knoxville, Tennessee", "icpHint": 2}, {"name": "Publix Super Markets", "segment": "Retail", "size": "10,001+ employees", "location": "Lakeland, Florida", "icpHint": 2}, {"name": "QVC", "segment": "Retail", "size": "10,001+ employees", "location": "West Chester, Pennsylvania", "icpHint": 2}, {"name": "QVC Group", "segment": "Retail", "size": "10,001+ employees", "location": "West Chester, Pennsylvania", "icpHint": 2}, {"name": "Rural King", "segment": "Retail", "size": "10,001+ employees", "location": "mattoon", "icpHint": 2}, {"name": "Safeway", "segment": "Retail", "size": "10,001+ employees", "location": "pleasanton", "icpHint": 2}, {"name": "Shutterfly", "segment": "Retail", "size": "10,001+ employees", "location": "San Jose, CA", "icpHint": 2}, {"name": "Southeastern Grocers", "segment": "Retail", "size": "10,001+ employees", "location": "Jacksonville, Florida", "icpHint": 2}, {"name": "Starbucks", "segment": "Retail", "size": "10,001+ employees", "location": "Seattle, WA", "icpHint": 2}, {"name": "Sterling Jewelers", "segment": "Retail", "size": "10,001+ employees", "location": "Akron, OH", "icpHint": 2}, {"name": "Sunbelt Rentals, Inc.", "segment": "Retail", "size": "10,001+ employees", "location": "Fort Mill, South Carolina", "icpHint": 2}, {"name": "The Save Mart Companies", "segment": "Retail", "size": "10,001+ employees", "location": "Modesto", "icpHint": 2}, {"name": "TravelCenters of America", "segment": "Retail", "size": "10,001+ employees", "location": "Westlake, Ohio", "icpHint": 2}, {"name": "Wakefern Food Corp.", "segment": "Retail", "size": "10,001+ employees", "location": "Keasbey, NJ", "icpHint": 2}, {"name": "Wayfair", "segment": "Retail", "size": "10,001+ employees", "location": "Boston, MA", "icpHint": 2}, {"name": "Zale Jewelers", "segment": "Retail", "size": "10,001+ employees", "location": "Irving, TX", "icpHint": 2}];
+
+const SEG_COLORS = {
+  'Banking & Financial Services':['var(--ae)','rgba(0,201,167,.1)'],
+  'Technology':['var(--blue)','rgba(59,130,246,.1)'],
+  'Retail':['var(--amber)','rgba(245,158,11,.1)'],
+  'Insurance':['#a78bfa','rgba(167,139,250,.1)']
+};
+function segPill(seg){
+  const [c,bg]=SEG_COLORS[seg]||['var(--text2)','var(--bg3)'];
+  return `<span class="seg-pill" style="color:${c};background:${bg};border:1px solid ${c}30">${seg}</span>`;
+}
+function icpBadge(icp){
+  return icp===1
+    ?`<span style="font-family:var(--font-m);font-size:9px;color:var(--ae);background:rgba(0,201,167,.1);padding:2px 7px;border-radius:4px;border:1px solid rgba(0,201,167,.2)">T1 &mdash; HIGH FIT</span>`
+    :`<span style="font-family:var(--font-m);font-size:9px;color:var(--amber);background:rgba(245,158,11,.1);padding:2px 7px;border-radius:4px;border:1px solid rgba(245,158,11,.2)">T2 &mdash; MODERATE</span>`;
+}
+let rosF='all',rosQ='';
+function renderRoster(list){
+  const b=document.getElementById('ros-body');if(!b)return;
+  if(!list.length){b.innerHTML='<div style="padding:40px;text-align:center;font-family:var(--font-m);font-size:11px;color:var(--text3)">No accounts match.</div>';document.getElementById('ros-ct').textContent='No results';return;}
+  b.innerHTML='';
+  list.forEach((a,i)=>{
+    const row=document.createElement('div');
+    row.className='acct-row roster-grid';
+    row.innerHTML=
+      '<div style="font-family:var(--font-m);font-size:10px;color:var(--text3)">'+String(i+1).padStart(3,'0')+'</div>'+
+      '<div style="font-weight:500;font-size:13px">'+a.name+'</div>'+
+      '<div>'+segPill(a.segment)+'</div>'+
+      '<div style="font-family:var(--font-m);font-size:10px;color:var(--text2)">'+a.size.replace(' employees','')+'</div>'+
+      '<div style="font-family:var(--font-m);font-size:10px;color:var(--text2)">'+a.location+'</div>'+
+      '<div>'+icpBadge(a.icpHint)+'</div>'+
+      '<div><button class="act-btn">&#8594;</button></div>';
+    row.querySelector('.act-btn').addEventListener('click',()=>launchResearch(a.name));
+    b.appendChild(row);
+  });
+  document.getElementById('ros-ct').textContent='Showing '+list.length+' accounts';
+}
+function launchResearch(name){go('ae-research');document.getElementById('r-co').value=name;runResearch();}
+function rFilt(f,el){rosF=f;document.querySelectorAll('#view-ae-roster .chip').forEach(c=>c.classList.remove('on-ae'));el.classList.add('on-ae');applyRoster();}
+function filterRoster(q){rosQ=q;applyRoster();}
+function applyRoster(){
+  if(!document.getElementById('ros-body'))return;
+  let f=[...ROSTER];
+  if(rosF==='finserv')f=f.filter(a=>a.segment==='Banking & Financial Services');
+  if(rosF==='retail')f=f.filter(a=>a.segment==='Retail');
+  if(rosF==='insurance')f=f.filter(a=>a.segment==='Insurance');
+  if(rosF==='tech')f=f.filter(a=>a.segment==='Technology');
+  if(rosQ)f=f.filter(a=>a.name.toLowerCase().includes(rosQ.toLowerCase())||a.location.toLowerCase().includes(rosQ.toLowerCase()));
+  renderRoster(f);
+}
+function exportRoster(){
+  const rows=[['Company','Segment','Size','Location','ICP Tier'],...ROSTER.map(a=>[a.name,a.segment,a.size,a.location,a.icpHint===1?'T1':'T2'])];
+  const csv=rows.map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='baseops-roster.csv';a.click();
+}
+
+// ══════════════════════════════════════
+// LINKEDIN CONNECTIONS
+// ══════════════════════════════════════
+let CONNS=[],CONN_MAP={};
+const SEC_KW=['security','cso','chief security','global security','corporate security','physical security','gsoc','threat intel','travel risk','asset protection','loss prevention','director of security','vp security','head of security','intelligence analyst','executive protection'];
+function parseConnCSV(text){
+  const lines=text.trim().split('\n');if(lines.length<2)return[];
+  const hdr=lines[0].split(',').map(h=>h.replace(/"/g,'').trim().toLowerCase());
+  const col={first:hdr.findIndex(h=>h.includes('first')),last:hdr.findIndex(h=>h.includes('last')),company:hdr.findIndex(h=>h.includes('company')||h.includes('employer')||h.includes('organization')),title:hdr.findIndex(h=>h.includes('title')||h.includes('position')||h.includes('role')),email:hdr.findIndex(h=>h.includes('email'))};
+  const conns=[];
+  for(let i=1;i<lines.length;i++){
+    const row=parseCSVRow(lines[i]);if(!row.length)continue;
+    const firstName=col.first>=0?(row[col.first]||'').trim():'';
+    const lastName=col.last>=0?(row[col.last]||'').trim():'';
+    const company=col.company>=0?(row[col.company]||'').trim():'';
+    const title=col.title>=0?(row[col.title]||'').trim():'';
+    const email=col.email>=0?(row[col.email]||'').trim():'';
+    if(!company)continue;
+    const name=(firstName+' '+lastName).trim()||'Unknown';
+    const isSec=SEC_KW.some(kw=>title.toLowerCase().includes(kw));
+    conns.push({name,company,title,email,isSec});
+  }
+  return conns;
+}
+function parseCSVRow(line){
+  const r=[];let cur='',inQ=false;
+  for(const ch of line){if(ch==='"'){inQ=!inQ;}else if(ch===','&&!inQ){r.push(cur);cur='';}else{cur+=ch;}}
+  r.push(cur);return r.map(s=>s.replace(/^"|"$/g,'').trim());
+}
+function normCo(n){return n.toLowerCase().replace(/[,.]/g,'').replace(/\b(inc|llc|ltd|corp|corporation|company|co|the|group|holdings|global|americas|us|usa)\b/g,'').replace(/[^a-z0-9\s]/g,'').replace(/\s+/g,' ').trim();}
+function fuzzyMatch(a,b){
+  const na=normCo(a),nb=normCo(b);
+  if(na===nb)return true;
+  if(na.length>3&&nb.includes(na))return true;
+  if(nb.length>3&&na.includes(nb))return true;
+  const wa=new Set(na.split(' ').filter(w=>w.length>2));
+  const wb=new Set(nb.split(' ').filter(w=>w.length>2));
+  return [...wa].filter(w=>wb.has(w)).length>=2;
+}
+function getConnsFor(name){return CONNS.filter(c=>fuzzyMatch(c.company,name));}
+function buildWarmHTML(a){
+  const lc=getConnsFor(a.name);
+  if(!lc.length)return`<div class="brief">${a.warmPath}</div>`;
+  const sec=lc.filter(c=>c.isSec),other=lc.filter(c=>!c.isSec);
+  let h=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:8px 12px;background:rgba(0,201,167,.08);border:1px solid rgba(0,201,167,.2);border-radius:var(--r)"><span style="font-family:var(--font-m);font-size:10px;color:#00c9a7">${lc.length} LinkedIn connection${lc.length>1?'s':''} found</span>${sec.length?`<span style="font-family:var(--font-m);font-size:9px;padding:1px 7px;border-radius:3px;background:rgba(0,201,167,.15);color:#00c9a7;border:1px solid rgba(0,201,167,.3)">${sec.length} security-relevant</span>`:''}</div>`;
+  if(sec.length){h+='<div style="font-family:var(--font-m);font-size:9px;letter-spacing:.12em;color:#00c9a7;margin-bottom:6px">SECURITY &amp; RISK TITLES</div><div style="display:flex;flex-direction:column;gap:5px;margin-bottom:10px">';sec.forEach(c=>{h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--bg3);border-radius:var(--r);border:1px solid rgba(0,201,167,.15)"><div><div style="font-size:12px;font-weight:500">${c.name}</div>${c.title?`<div style="font-family:var(--font-m);font-size:10px;color:#00c9a7">${c.title}</div>`:''}</div>${c.email?`<a href="mailto:${c.email}" style="font-family:var(--font-m);font-size:9px;color:var(--text2);text-decoration:none" onclick="event.stopPropagation()">&#9993;</a>`:''}</div>`;});h+='</div>';}
+  if(other.length){h+='<div style="font-family:var(--font-m);font-size:9px;letter-spacing:.12em;color:var(--text2);margin-bottom:6px">OTHER CONNECTIONS</div><div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px">';other.slice(0,6).forEach(c=>{h+=`<div style="padding:4px 9px;background:var(--bg3);border-radius:var(--r);border:1px solid var(--border)"><div style="font-size:11px;font-weight:500">${c.name}</div>${c.title?`<div style="font-family:var(--font-m);font-size:9px;color:var(--text2)">${c.title}</div>`:''}</div>`;});if(other.length>6)h+=`<div style="padding:4px 9px;background:var(--bg3);border-radius:var(--r);border:1px solid var(--border);font-family:var(--font-m);font-size:9px;color:var(--text2)">+${other.length-6} more</div>`;h+='</div>';}
+  if(a.warmPath)h+=`<div style="font-family:var(--font-m);font-size:9px;color:var(--text3);margin-top:4px;padding-top:8px;border-top:1px solid var(--border)">Also: ${a.warmPath}</div>`;
+  return h;
+}
+function handleConnFile(file){
+  if(!file)return;
+  const st=document.getElementById('conn-status');st.style.display='block';st.style.color='var(--amber)';st.textContent='Parsing '+file.name+'\u2026';
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      const p=parseConnCSV(e.target.result);
+      if(!p.length){st.style.color='var(--red)';st.textContent='No valid rows found.';return;}
+      CONNS=p;CONN_MAP={};
+      try{localStorage.setItem('baseops_conns',JSON.stringify({data:p,at:new Date().toISOString()}));}catch(e){}
+      updConnUI();st.style.color='#00c9a7';st.textContent='&#10003; '+p.length+' connections loaded';
+    }catch(err){st.style.color='var(--red)';st.textContent='Parse error: '+err.message;}
+  };
+  r.readAsText(file);
+}
+function loadConns(){
+  try{const r=localStorage.getItem('baseops_conns');if(!r)return;const s=JSON.parse(r);CONNS=s.data||[];updConnUI();}catch(e){CONNS=[];}
+}
+function clearConns(){if(!confirm('Clear all connection data?'))return;CONNS=[];localStorage.removeItem('baseops_conns');updConnUI();}
+function getMatchCount(){return [...PROSPECTS,...ROSTER].filter(a=>getConnsFor(a.name).length>0).length;}
+function updConnUI(){
+  const badge=document.getElementById('conn-badge');
+  if(badge){if(CONNS.length){badge.style.background='var(--ae)';badge.style.color='#060d0c';badge.textContent=CONNS.length;}else{badge.style.background='var(--bg4)';badge.style.color='var(--text3)';badge.textContent='0';}}
+  const el=document.getElementById('conn-meta');
+  if(el)el.textContent=CONNS.length?CONNS.length+' connections \u00b7 '+getMatchCount()+' accounts matched':'No connections loaded \u00b7 export from Clay and upload below';
+  const t=document.getElementById('stat-tc'),w=document.getElementById('stat-wa'),s=document.getElementById('stat-sc'),u=document.getElementById('stat-lu');
+  if(!t)return;
+  if(!CONNS.length){[t,w,s].forEach(el=>{if(el)el.textContent='\u2014';});if(u)u.textContent='Never';return;}
+  if(t)t.textContent=CONNS.length;if(w)w.textContent=getMatchCount();if(s)s.textContent=CONNS.filter(c=>c.isSec).length;
+  try{const r=localStorage.getItem('baseops_conns');if(r&&u){const d=new Date(JSON.parse(r).at);u.textContent=d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}}catch(e){}
+  renderConnMatches();
+}
+let connQ='';
+function filterConnMatches(q){connQ=q;renderConnMatches();}
+function renderConnMatches(){
+  const wrap=document.getElementById('conn-wrap'),body=document.getElementById('conn-body');
+  if(!wrap||!body)return;
+  if(!CONNS.length){wrap.style.display='none';return;}
+  wrap.style.display='block';
+  const all=[...PROSPECTS,...ROSTER].map(a=>({a,conns:getConnsFor(a.name)})).filter(x=>x.conns.length>0).filter(x=>!connQ||x.a.name.toLowerCase().includes(connQ.toLowerCase())).sort((a,b)=>{const aS=a.conns.filter(c=>c.isSec).length,bS=b.conns.filter(c=>c.isSec).length;return bS-aS||b.conns.length-a.conns.length;});
+  if(!all.length){body.innerHTML='<div style="padding:24px;text-align:center;font-family:var(--font-m);font-size:11px;color:var(--text3)">No matches found</div>';return;}
+  body.innerHTML='';
+  all.forEach(({a,conns})=>{
+    const sec=conns.filter(c=>c.isSec);
+    const div=document.createElement('div');
+    div.style.cssText='padding:12px 18px;border-bottom:1px solid var(--border);display:grid;grid-template-columns:1.5fr 2fr 60px;gap:12px;align-items:start;cursor:pointer;transition:background .1s';
+    div.onmouseenter=function(){this.style.background='rgba(255,255,255,.02)';};
+    div.onmouseleave=function(){this.style.background='';};
+    const isP=PROSPECTS.some(p=>p.name===a.name);
+    if(isP)div.onclick=()=>openAE(PROSPECTS.find(p=>p.name===a.name));
+    div.innerHTML='<div><div style="font-weight:500;font-size:13px">'+a.name+'</div><div style="font-family:var(--font-m);font-size:10px;color:var(--text2)">'+(a.segment||a.industry||'')+'</div>'+(isP?'<div style="font-family:var(--font-m);font-size:9px;color:#00c9a7;margin-top:2px">&#10003; Target account</div>':'<div style="font-family:var(--font-m);font-size:9px;color:var(--text3);margin-top:2px">Roster</div>')+'</div><div style="display:flex;flex-wrap:wrap;gap:4px">'+(sec.map(c=>'<div style="padding:3px 8px;background:rgba(0,201,167,.08);border:1px solid rgba(0,201,167,.2);border-radius:4px"><div style="font-size:11px;font-weight:500;color:#00c9a7">'+c.name+'</div>'+(c.title?'<div style="font-family:var(--font-m);font-size:9px;color:#00c9a7">'+c.title+'</div>':'')+'</div>').join(''))+conns.filter(c=>!c.isSec).slice(0,3).map(c=>'<div style="padding:3px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px"><div style="font-size:11px">'+c.name+'</div>'+(c.title?'<div style="font-family:var(--font-m);font-size:9px;color:var(--text2)">'+c.title+'</div>':'')+'</div>').join('')+'</div><div style="text-align:right"><div style="font-family:var(--font-d);font-size:20px;font-weight:700;color:'+(sec.length?'#00c9a7':'var(--amber)')+'">'+conns.length+'</div><div style="font-family:var(--font-m);font-size:9px;color:var(--text2)">'+(sec.length?sec.length+' in security':'connection'+(conns.length>1?'s':''))+'</div></div>';
+    body.appendChild(div);
+  });
+}
+
+// ══════════════════════════════════════
+// SUMBLE
+// ══════════════════════════════════════
+const SUMBLE_TOOLS=['dataminr','everbridge','ontic','alertmedia','liferaft'];
+let sumbleKey='',sumbleCache={},sumbleCR=null;
+function loadSumble(){
+  try{sumbleKey=localStorage.getItem('baseops_skey')||'';const r=localStorage.getItem('baseops_scache');if(r)sumbleCache=JSON.parse(r);}catch(e){}
+  updSumbleSt();
+  if(sumbleKey){const i=document.getElementById('sumble-key');if(i)i.value='\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022';const s=document.getElementById('sumble-key-st');if(s){s.textContent='&#10003; API key loaded';s.style.color='#00c9a7';}const b=document.getElementById('sumble-batch');if(b)b.style.display='flex';}
+}
+function saveSumbleKey(){
+  const i=document.getElementById('sumble-key'),v=i?i.value.trim():'';
+  if(!v||v.startsWith('\u2022'))return;
+  sumbleKey=v;try{localStorage.setItem('baseops_skey',v);}catch(e){}
+  const s=document.getElementById('sumble-key-st');if(s){s.textContent='&#10003; API key saved';s.style.color='#00c9a7';}
+  const b=document.getElementById('sumble-batch');if(b)b.style.display='flex';
+  updSumbleSt();
+}
+function updSumbleSt(){
+  const el=document.getElementById('sumble-st-line'),cr=document.getElementById('sumble-cr-line');
+  if(!el)return;
+  if(!sumbleKey){el.textContent='No API key configured';el.style.color='var(--text3)';return;}
+  el.textContent=Object.keys(sumbleCache).length+' accounts enriched and cached';el.style.color='#00c9a7';
+  if(cr&&sumbleCR!==null)cr.textContent=sumbleCR.toLocaleString()+' credits remaining';
+}
+function saveSumbleCache(){try{localStorage.setItem('baseops_scache',JSON.stringify(sumbleCache));}catch(e){}}
+async function sFetch(ep,body){
+  if(!sumbleKey)throw new Error('No Sumble API key. Add it in ICP & Scoring settings.');
+  const r=await fetch('https://api.sumble.com'+ep,{method:'POST',headers:{'Authorization':'Bearer '+sumbleKey,'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error('Sumble '+r.status+': '+(e.detail||r.statusText));}
+  return r.json();
+}
+async function enrichAcct(domain){
+  if(!domain)return null;
+  const cached=sumbleCache[domain];
+  if(cached&&(Date.now()-new Date(cached.at).getTime())<7*86400000)return cached;
+  const since=new Date(Date.now()-90*24*60*60*1000).toISOString().split('T')[0];
+  const[tech,jobs]=await Promise.all([
+    sFetch('/v5/organizations/enrich',{organization:{domain},filters:{technologies:SUMBLE_TOOLS}}).catch(e=>({error:e.message})),
+    sFetch('/v5/jobs/find',{organization:{domain},filters:{query:'global security OR corporate security OR security analyst OR threat intelligence OR GSOC OR travel risk OR asset protection OR loss prevention OR executive protection OR director of security OR chief security officer',since},limit:5}).catch(e=>({error:e.message}))
+  ]);
+  const res={domain,at:new Date().toISOString(),credits:(tech.credits_used||0)+(jobs.credits_used||0),techData:tech.error?null:{technologies:tech.technologies||[],count:tech.technologies_count||0},jobData:jobs.error?null:{jobs:jobs.jobs||[],total:jobs.total||0},errors:[tech.error,jobs.error].filter(Boolean)};
+  if(tech.credits_remaining!=null)sumbleCR=tech.credits_remaining;
+  if(jobs.credits_remaining!=null)sumbleCR=jobs.credits_remaining;
+  sumbleCache[domain]=res;saveSumbleCache();updSumbleSt();return res;
+}
+function techFitScore(d){
+  if(!d||!d.techData)return null;
+  const cnt=d.techData.count||0;
+  if(cnt>=2)return 9.0;if(cnt===1)return 7.0;return 3.0;
+}
+function talentScore(d,base){
+  if(!d||!d.jobData)return base;
+  const jobs=d.jobData.jobs||[];if(!jobs.length)return Math.max(3,base-1);
+  const senTitles=['cso','chief security','vp security','director','head of security','global security'];
+  const sen=jobs.filter(j=>senTitles.some(t=>(j.job_title||'').toLowerCase().includes(t))).length;
+  const rec=jobs.filter(j=>(Date.now()-new Date(j.datetime_pulled).getTime())<30*86400000).length;
+  return Math.min(10,parseFloat((5+Math.min(2,jobs.length*.3)+Math.min(2,sen)+Math.min(1,rec*.5)).toFixed(1)));
+}
+function buildSumbleHTML(domain,d){
+  if(!sumbleKey)return'<div style="padding:10px 12px;background:var(--bg3);border-radius:var(--r);border:1px solid var(--border);font-family:var(--font-m);font-size:10px;color:var(--text3)">Add Sumble API key in <strong>ICP &amp; Scoring</strong> to enable live tech stack and job signal data.</div>';
+  if(!domain)return'<div style="font-family:var(--font-m);font-size:10px;color:var(--text3)">No domain available.</div>';
+  if(!d)return'<div style="display:flex;align-items:center;gap:8px;font-family:var(--font-m);font-size:11px;color:var(--amber)"><div class="spin"></div>Fetching from Sumble\u2026</div>';
+  if(d.errors&&d.errors.length&&!d.techData&&!d.jobData)return'<div style="font-family:var(--font-m);font-size:10px;color:var(--red)">&#9888; '+d.errors[0]+'</div>';
+  let h='';
+  if(d.techData){
+    const score=techFitScore(d);
+    const sc2=score>=9?'#00c9a7':score>=7?'var(--amber)':'var(--red)';
+    const lbl=score>=9?'Strong fit \u2014 mature security stack':score>=7?'Moderate fit \u2014 some security tooling':'Weak fit \u2014 no known security intelligence tools';
+    const tools=(d.techData.technologies||[]).map(t=>t.name).join(', ');
+    h+='<div style="margin-bottom:12px"><div style="font-family:var(--font-m);font-size:9px;letter-spacing:.12em;color:var(--text2);margin-bottom:7px">TECH STACK</div>';
+    h+='<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg3);border-radius:var(--r);border:1px solid var(--border)"><div style="font-family:var(--font-d);font-size:22px;font-weight:700;color:'+sc2+'">'+score+'</div><div><div style="font-size:12px;font-weight:500;color:'+sc2+'">'+lbl+'</div>'+(tools?'<div style="font-family:var(--font-m);font-size:10px;color:var(--text2);margin-top:2px">Detected: '+tools+'</div>':'<div style="font-family:var(--font-m);font-size:10px;color:var(--text3);margin-top:2px">None of the 5 target tools detected</div>')+'</div></div></div>';
+  }
+  if(d.jobData){
+    const jobs=d.jobData.jobs||[];
+    h+='<div><div style="font-family:var(--font-m);font-size:9px;letter-spacing:.12em;color:var(--text2);margin-bottom:7px">SECURITY JOB POSTINGS \u2014 LAST 90 DAYS ('+d.jobData.total+' total)</div>';
+    if(jobs.length){h+='<div style="display:flex;flex-direction:column;gap:4px">';jobs.forEach(j=>{const dt=j.datetime_pulled?new Date(j.datetime_pulled).toLocaleDateString('en-US',{month:'short',day:'numeric'}):'';h+='<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:var(--bg3);border-radius:var(--r);border:1px solid var(--border)"><div style="font-size:12px;text-transform:capitalize">'+(j.job_title||'Untitled')+'</div><div style="font-family:var(--font-m);font-size:9px;color:var(--text2)">'+dt+'</div></div>';});h+='</div>';}
+    else h+='<div style="font-family:var(--font-m);font-size:10px;color:var(--text3)">No security-related postings in last 90 days.</div>';
+    h+='</div>';
+  }
+  const age=d.at?new Date(d.at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'';
+  h+='<div style="font-family:var(--font-m);font-size:9px;color:var(--text3);margin-top:10px;padding-top:8px;border-top:1px solid var(--border)">Sumble data \u00b7 fetched '+age+' \u00b7 '+d.credits+' credits used</div>';
+  return h;
+}
+async function injectSumble(domain){
+  const det=document.getElementById('d-body');if(!det)return;
+  let sec=document.getElementById('sumble-sec');
+  if(!sec){sec=document.createElement('div');sec.id='sumble-sec';sec.className='det-sec';sec.innerHTML='<div class="det-sec-title">TECH STACK &amp; JOB SIGNALS \u2014 SUMBLE</div><div id="sumble-body">'+buildSumbleHTML(domain,null)+'</div>';det.appendChild(sec);}
+  if(!sumbleKey||!domain)return;
+  try{
+    const d=await enrichAcct(domain);
+    const b=document.getElementById('sumble-body');if(b)b.innerHTML=buildSumbleHTML(domain,d);
+    if(d){
+      const ts=techFitScore(d);const tl=talentScore(d,5);
+      if(ts!==null){updBar('Technology Fit',ts);updBar('Talent Signals',tl);}
+    }
+  }catch(e){const b=document.getElementById('sumble-body');if(b)b.innerHTML='<div style="font-family:var(--font-m);font-size:10px;color:var(--red)">&#9888; '+e.message+'</div>';}
+}
+function updBar(dim,val){
+  document.querySelectorAll('#d-body .score-row').forEach(row=>{
+    const lbl=row.querySelector('.sc-label');
+    if(lbl&&lbl.textContent.trim().startsWith(dim)){
+      const bar=row.querySelector('.sc-fill'),num=row.querySelector('.sc-num-d');
+      const col=val>=8.5?'#00c9a7':val>=7?'var(--amber)':val>=5.5?'var(--blue)':'var(--red)';
+      if(bar){bar.style.width=(val*10)+'%';bar.style.background=col;}
+      if(num){num.textContent=val;num.style.color=col;}
+    }
+  });
+}
+let batchRunning=false;
+async function runBatchEnrich(){
+  if(batchRunning)return;
+  if(!sumbleKey){alert('Add your Sumble API key in ICP & Scoring settings first.');return;}
+  if(!confirm('This will enrich all accounts using Sumble credits (~5-20 each). Proceed?'))return;
+  batchRunning=true;
+  const btn=document.getElementById('sumble-batch'),st=document.getElementById('sumble-st-line');
+  if(btn)btn.textContent='&#9203; Enriching\u2026';
+  const all=[...PROSPECTS.filter(p=>p.domain),...ROSTER.filter(r=>r.domain)].filter(a=>!sumbleCache[a.domain]);
+  let done=0;
+  for(const a of all){
+    if(st)st.textContent='Enriching '+a.name+' ('+done+'/'+all.length+')';
+    try{await enrichAcct(a.domain);}catch(e){}
+    done++;await new Promise(r=>setTimeout(r,500));
+  }
+  batchRunning=false;
+  if(btn)btn.textContent='&#9889; Batch enrich all accounts';
+  updSumbleSt();
+}
+
+// ══════════════════════════════════════
+// INIT
+// ══════════════════════════════════════
+applyAE();
+applyCS();
+renderAlerts();
+renderConfig();
+applyRoster();
+loadConns();
+loadSumble();
+loadAnthropicKey();
+loadAnthropicKey();
+
+</script>
+</body>
+</html>
